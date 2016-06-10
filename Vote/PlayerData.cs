@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Vote {
+﻿namespace Vote {
 	public class PlayerData {
+		public Vote OngoingVote;
+		public bool Support = false;
+		public bool Voted = false;
+		public bool AwaitingChoice = false;
 	}
 }
