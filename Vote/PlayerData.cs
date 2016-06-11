@@ -1,8 +1,10 @@
 ﻿namespace Vote {
 	public class PlayerData {
-		public Vote OngoingVote;
+		public Vote StartedVote;
 		public bool Support = false;
 		public bool Voted = false;
-		public bool AwaitingChoice = false;
+		public bool AwaitingReason = false;
+		public bool AwaitingConfirm = false;
+		public int ToVoteMsgCd = 0;
 	}
 }

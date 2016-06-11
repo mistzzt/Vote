@@ -3,6 +3,7 @@
 		Ban,
 		Kick,
 		Mute,
-		Kill
+		Kill,
+		Command
 	}
 }
