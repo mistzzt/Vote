@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using Newtonsoft.Json;
 using TShockAPI;
@@ -20,18 +21,15 @@ namespace Vote {
 		public int MaxAwaitingReasonTime = 15;
 
 		[JsonProperty]
-		public int MaxAwaitingConfirmTime = 15;
-
-		[JsonProperty]
 		public int WarningInterval = 1;
 
-		public Configuration() {
+		internal void LoadGroup() {
 			ExecutiveGroup = TShock.Groups.GetGroupByName(ExecutiveGroupName);
 			if(ExecutiveGroup == null) {
 				if(ExecutiveGroupName == "wheel")
 					LoadWheelGroup();
 				else {
-					TShock.Log.Error("[Vote] Group {0} doesn't exist. Group wheel will be used", ExecutiveGroupName);
+					TShock.Log.ConsoleError("[Vote] Group {0} doesn't exist, and group wheel will be used.", ExecutiveGroupName);
 					LoadWheelGroup();
 				}
 			}
