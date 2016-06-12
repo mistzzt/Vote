@@ -17,7 +17,7 @@ namespace Vote {
 			if(args.Parameters.Count == 0) {
 				data.AwaitingReason = true;
 				args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /reason <Reason>");
-				args.Player.SendInfoMessage("You still have {0} seconds to enter your reason using {1}.", VotePlugin.Config.MaxAwaitingReasonTime - (DateTime.UtcNow - data.StartedVote.Time).Seconds, TShock.Utils.ColorTag("/reason <Reason>", Color.Cyan));
+				args.Player.SendInfoMessage("You still have {0} seconds to enter your reason using {1}.", VotePlugin.Config.MaxAwaitingReasonTime - (int)(DateTime.UtcNow - data.StartedVote.Time).TotalSeconds, TShock.Utils.ColorTag("/reason <Reason>", Color.Cyan));
 				return;
 			}
 
@@ -29,7 +29,7 @@ namespace Vote {
 			timer.Elapsed += (s, e) => OnVoteTimerElasped(data.StartedVote);
 
 			foreach(var player in TShock.Players.Where(p => p != null && p.IsLoggedIn && p.HasPermission("vote.player.vote"))) {
-				data.AwaitingVote = true;
+				player.GetData<PlayerData>(VotePlugin.VotePlayerData).AwaitingVote = true;
 				player.SendInfoMessage("{0} started a new vote {1} for {2}.", data.StartedVote.Sponsor,
 					TShock.Utils.ColorTag(data.StartedVote.ToString(), Color.SkyBlue),
 					TShock.Utils.ColorTag(reason, Color.SkyBlue));
@@ -71,13 +71,13 @@ namespace Vote {
 					TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
 					return;
 				}
-				var targetData = args.Player.GetData<PlayerData>(VotePlugin.VotePlayerData);
+				var targetData = players[0].GetData<PlayerData>(VotePlugin.VotePlayerData);
 				if(targetData.StartedVote == null) {
 					data.AwaitingVote = true;
 					args.Player.SendErrorMessage("Invalid player!");
 					return;
 				}
-				if(data.OngoingVote != targetData.StartedVote) {
+				if(data.OngoingVote != null && data.OngoingVote != targetData.StartedVote) {
 					data.AwaitingVote = true;
 					args.Player.SendErrorMessage("You must first finish {0} (by {1}).",
 						TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.LightCyan),
@@ -140,23 +140,38 @@ namespace Vote {
 		}
 
 		internal void OnVoteTimerElasped(Vote vote) {
-			vote.Execute();
-			TSPlayer.All.SendMessage(string.Format("{0} has {1}passed. ({2} : {3})",
-				TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue),
-				vote.Succeed ? "" : "not ",
-				TShock.Utils.ColorTag(vote.Proponents.Count.ToString(), Color.Green),
-				TShock.Utils.ColorTag(vote.Opponents.Count.ToString(), Color.Red)), Color.SkyBlue);
-			// remove references and responses
-			_instance.Votes.Remove(vote);
 			TShock.Players.Where(p => p != null).ForEach(p => {
 				var data = p.GetData<PlayerData>(VotePlugin.VotePlayerData);
-				if(data.StartedVote == vote || data.OngoingVote == vote) {
-					data.AwaitingVote = false;
-					data.AwaitingConfirm = false;
+				// sponsor of vote
+				if(data.StartedVote == vote) {
+					p.SendMessage($"Your vote {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)} has expired.", Color.Azure);
+					data.AwaitingReason = false;
 					data.StartedVote = null;
+				}
+				// those who /assent or /dissent but not /y
+				if(data.OngoingVote == vote) {
+					p.SendErrorMessage($"The vote {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)} has expired. You haven't confirmed.");
+					data.AwaitingConfirm = false;
 					data.OngoingVote = null;
 				}
+				// those who don't type /assent or /dissent
+				if(vote.Opponents.All(n => p.User.Name != n) && vote.Proponents.All(n => p.User.Name != n)) {
+					vote.Neutrals.Add(p.User.Name);
+					p.SendMessage($"You have abstained from voting on {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)}.", Color.Azure);
+				}
 			});
+			if(vote.CheckPass())
+				vote.Execute();
+			TSPlayer.All.SendMessage(string.Format("{0} has {1}passed. ({2} : {3} : {4})",
+				TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue),
+				vote.Succeed ? "" : "not ",
+				TShock.Utils.ColorTag(vote.Proponents.Count.ToString(), Color.GreenYellow),
+				TShock.Utils.ColorTag(vote.Neutrals.Count.ToString(), Color.White),
+				TShock.Utils.ColorTag(vote.Opponents.Count.ToString(), Color.OrangeRed)), Color.SkyBlue);
+			VotePlugin.VotesHistory.AddVote(vote);
+			// remove references and responses
+			_instance.Votes.Remove(vote);
+			
 		}
 
 		internal void AwaitVote(TSPlayer player, bool remove) {

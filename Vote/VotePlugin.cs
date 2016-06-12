@@ -67,7 +67,7 @@ namespace Vote {
 			var data = args.Player.GetData<PlayerData>(VotePlayerData);
 			if(data.StartedVote != null) {
 				args.Player.SendErrorMessage("You can't initate a new vote until the former one you started ended. ({0}s)",
-					Config.MaxAwaitingVotingTime - (DateTime.UtcNow - data.StartedVote.Time).Seconds);
+					Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - data.StartedVote.Time).TotalSeconds);
 				return;
 			}
 
@@ -91,7 +91,7 @@ namespace Vote {
 							" * Use /assent [player] when dealing with more than one votes.",
 							"*** Other things:",
 							" * After {0} seconds, a vote will get its end.".SFormat(Config.MaxAwaitingVotingTime),
-							" * If you have any advice, go to {0} and create an issue."
+							" * If you have any advice, create an issue here {0}.".SFormat("https://github.com/mistzzt/Vote/")
 						};
 
 					PaginationTools.SendPage(args.Player, pageNumber, lines,

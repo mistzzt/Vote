@@ -14,6 +14,7 @@ namespace Vote {
 		public bool Executed { get; set; } = false;
 		public readonly List<string> Proponents = new List<string>();
 		public readonly List<string> Opponents = new List<string>();
+		public readonly List<string> Neutrals = new List<string>();
 
 		public Vote(string sponsor, string target, VoteType type) {
 			if(string.IsNullOrWhiteSpace(sponsor))
@@ -31,9 +32,13 @@ namespace Vote {
 			Time = time;
 		}
 
+		public bool CheckPass() {
+			Succeed = Proponents.Count > (Proponents.Count + Opponents.Count + Neutrals.Count) / 2;
+			return Succeed;
+		}
+
 		[SuppressMessage("ReSharper", "SwitchStatementMissingSomeCases")]
 		public void Execute() {
-			Succeed = Proponents.Count > Opponents.Count;
 			if(!Succeed)
 				return;
 
@@ -49,11 +54,10 @@ namespace Vote {
 					Commands.HandleCommand(VotePlugin.Player, $"/{Type} {Target}");
 					break;
 				case VoteType.Command:
-					Commands.HandleCommand(VotePlugin.Player, $"/{Target}");
+					Commands.HandleCommand(VotePlugin.Player, Target);
 					break;
 			}
 
-			VotePlugin.VotesHistory.AddVote(this);
 			Executed = true;
 		}
 
@@ -68,7 +72,7 @@ namespace Vote {
 				case VoteType.Mute:
 					return $"Muting {Target}";
 				case VoteType.Command:
-					return $"/{Target}";
+					return Target;
 				default:
 					throw new InvalidOperationException();
 			}
