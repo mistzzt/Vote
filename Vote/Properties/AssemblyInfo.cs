@@ -11,9 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("en-US")]
 
 [assembly: ComVisible(false)]
-
-// 如果此项目向 COM 公开，则下列 GUID 用于类型库的 ID
 [assembly: Guid("8016e0f2-824b-4a07-9488-f4a49765854b")]
 
-[assembly: AssemblyVersion("0.1.0.0")]
-[assembly: AssemblyFileVersion("0.1.0.0")]
+[assembly: AssemblyVersion("0.2.1.2")]
+[assembly: AssemblyFileVersion("0.2.1.2")]

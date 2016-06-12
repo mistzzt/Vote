@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 using TShockAPI;
 
@@ -32,8 +30,10 @@ namespace Vote {
 
 			foreach(var player in TShock.Players.Where(p => p != null && p.IsLoggedIn && p.HasPermission("vote.player.vote"))) {
 				data.AwaitingVote = true;
-				player.SendInfoMessage("{0} started a new vote {1} for {2}.", data.StartedVote.Sponsor, data.StartedVote, reason);
-				player.SendInfoMessage("Use {0} or {1} to cast a vote in {2} minutes. Otherwise, you will abstain from voting.",
+				player.SendInfoMessage("{0} started a new vote {1} for {2}.", data.StartedVote.Sponsor,
+					TShock.Utils.ColorTag(data.StartedVote.ToString(), Color.SkyBlue),
+					TShock.Utils.ColorTag(reason, Color.SkyBlue));
+				player.SendSuccessMessage("Use {0} or {1} to cast a vote in {2} seconds. Otherwise, you will abstain from voting.",
 					TShock.Utils.ColorTag("/assent", Color.Cyan),
 					TShock.Utils.ColorTag("/dissent", Color.Cyan),
 					VotePlugin.Config.MaxAwaitingVotingTime);
@@ -54,6 +54,7 @@ namespace Vote {
 
 			if(args.Parameters.Count == 0) {
 				if(_instance.Votes.Count > 1) {
+					data.AwaitingVote = true;
 					PrintMultipleVoteError(args.Player, assent);
 					return;
 				}
@@ -61,30 +62,36 @@ namespace Vote {
 			} else {
 				var players = TShock.Utils.FindPlayer(args.Parameters[0]);
 				if(players.Count == 0) {
+					data.AwaitingVote = true;
 					args.Player.SendErrorMessage("Invalid player!");
 					return;
 				}
 				if(players.Count > 1) {
+					data.AwaitingVote = true;
 					TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
 					return;
 				}
 				var targetData = args.Player.GetData<PlayerData>(VotePlugin.VotePlayerData);
 				if(targetData.StartedVote == null) {
+					data.AwaitingVote = true;
 					args.Player.SendErrorMessage("Invalid player!");
 					return;
 				}
 				if(data.OngoingVote != targetData.StartedVote) {
-					args.Player.SendErrorMessage("You must first finish {0} (by {1}).", data.OngoingVote, data.OngoingVote.Sponsor);
+					data.AwaitingVote = true;
+					args.Player.SendErrorMessage("You must first finish {0} (by {1}).",
+						TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.LightCyan),
+						TShock.Utils.ColorTag(data.OngoingVote.Sponsor, Color.LightCyan));
 					return;
 				}
 
 				vote = targetData.StartedVote;
 			}
 
-			args.Player.SendInfoMessage("Do you really decide to vote {0} {1}?",
-					assent ? "for" : "against",
+			args.Player.SendInfoMessage("Really vote {0} {1}?",
+					TShock.Utils.ColorTag(assent ? "for" : "against", Color.OrangeRed),
 					TShock.Utils.ColorTag(vote.ToString(), Color.Cyan));
-			args.Player.SendInfoMessage("Use {0} to confirm your answer.", TShock.Utils.ColorTag("/y", Color.Cyan));
+			args.Player.SendInfoMessage("Use {0} to confirm, {1} to cancel.", TShock.Utils.ColorTag("/y", Color.SkyBlue), TShock.Utils.ColorTag("/n", Color.SkyBlue));
 
 			data.OngoingVote = vote;
 			data.Support = assent;
@@ -96,13 +103,25 @@ namespace Vote {
 		internal void Confirm(CommandArgs args) {
 			var data = args.Player.GetData<PlayerData>(VotePlugin.VotePlayerData);
 
+			if(args.Message.ToLower().StartsWith("n")) {
+				data.AwaitingConfirm = false;
+				data.AwaitingVote = true;
+				data.OngoingVote = null;
+				args.Player.SendSuccessMessage("Your answer was canceled. Use {0} or {1} to cast a vote.",
+					TShock.Utils.ColorTag("/assent", Color.Cyan),
+					TShock.Utils.ColorTag("/dissent", Color.Cyan));
+				return;
+			}
+
 			if(data.Support)
 				data.OngoingVote.Proponents.Add(args.Player.User.Name);
 			else {
 				data.OngoingVote.Opponents.Add(args.Player.User.Name);
 			}
 
-			TSPlayer.All.SendInfoMessage($"{args.Player.User.Name} voted on {data.OngoingVote}!");
+			TSPlayer.All.SendInfoMessage("{0} voted on {1}!",
+				args.Player.User.Name,
+				TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
 			TShock.Log.ConsoleInfo($"{args.Player.User.Name} voted {(data.Support ? "for" : "against")} {data.OngoingVote}!");
 
 			data.OngoingVote = null;
@@ -112,22 +131,21 @@ namespace Vote {
 
 		internal void OnReasonTimerElasped(TSPlayer player) {
 			var data = player.GetData<PlayerData>(VotePlugin.VotePlayerData);
-			if(!data.AwaitingReason)
-				return;
 
-			player.AwaitingResponse.Remove("reason");
+			data.AwaitingReason = false;
 			_instance.Votes.Remove(data.StartedVote);
 			data.StartedVote = null;
 
 			player.SendErrorMessage("You haven't given your reason, so your vote is canceled.");
 		}
 
-		internal void OnConfirmTimerElasped(TSPlayer player, Vote vote) {
-			//ongoing
-		}
-
 		internal void OnVoteTimerElasped(Vote vote) {
 			vote.Execute();
+			TSPlayer.All.SendMessage(string.Format("{0} has {1}passed. ({2} : {3})",
+				TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue),
+				vote.Succeed ? "" : "not ",
+				TShock.Utils.ColorTag(vote.Proponents.Count.ToString(), Color.Green),
+				TShock.Utils.ColorTag(vote.Opponents.Count.ToString(), Color.Red)), Color.SkyBlue);
 			// remove references and responses
 			_instance.Votes.Remove(vote);
 			TShock.Players.Where(p => p != null).ForEach(p => {
@@ -135,6 +153,8 @@ namespace Vote {
 				if(data.StartedVote == vote || data.OngoingVote == vote) {
 					data.AwaitingVote = false;
 					data.AwaitingConfirm = false;
+					data.StartedVote = null;
+					data.OngoingVote = null;
 				}
 			});
 		}
@@ -143,11 +163,10 @@ namespace Vote {
 			if(remove) {
 				player.AwaitingResponse.Remove("assent");
 				player.AwaitingResponse.Remove("dissent");
-			}
-			else {
+			} else {
 				player.AddResponse("assent", obj => Vote((CommandArgs)obj));
 				player.AddResponse("dissent", obj => Vote((CommandArgs)obj));
-			}		
+			}
 		}
 
 		internal void AwaitReason(TSPlayer player, bool remove) {
@@ -158,10 +177,13 @@ namespace Vote {
 		}
 
 		internal void AwaitConfirm(TSPlayer player, bool remove) {
-			if(remove)
+			if(remove) {
 				player.AwaitingResponse.Remove("y");
-			else
+				player.AwaitingResponse.Remove("n");
+			} else {
 				player.AddResponse("y", obj => Confirm((CommandArgs)obj));
+				player.AddResponse("n", obj => Confirm((CommandArgs)obj));
+			}
 		}
 
 		internal void PrintMultipleVoteError(TSPlayer player, bool assent) {

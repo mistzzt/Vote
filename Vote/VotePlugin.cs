@@ -2,17 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Timers;
 using TerrariaApi.Server;
 using Terraria;
 using TShockAPI;
-using TShockAPI.DB;
 
 namespace Vote {
 	[ApiVersion(1, 23)]
 	public class VotePlugin:TerrariaPlugin {
 		public const string VotePlayerData = "votedata";
+		internal static Configuration Config;
+		internal Dictionary<Vote, Timer> Votes = new Dictionary<Vote, Timer>();
+		internal static TSWheelPlayer Player;
+		internal static Utils Utils;
 
 		public override string Name => "Vote";
 		public override string Author => "MistZZT";
@@ -22,22 +24,172 @@ namespace Vote {
 		public VotePlugin(Main game) : base(game) { }
 
 		public override void Initialize() {
+			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 			ServerApi.Hooks.ServerJoin.Register(this, OnJoin);
 			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
 		}
 
 		protected override void Dispose(bool disposing) {
 			if(disposing) {
+				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
 				ServerApi.Hooks.ServerJoin.Deregister(this, OnJoin);
 				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
 			}
 			base.Dispose(disposing);
 		}
 
+		private void OnInitialize(EventArgs args) {
+			Config = Configuration.Read(Configuration.FilePath);
+			Config.Write(Configuration.FilePath);
+			Config.LoadGroup();
+			Player = new TSWheelPlayer();
+			Utils = new Utils(this);
+
+			Commands.ChatCommands.Add(new Command("vote.player.startvote", StartVote, "vote", "v") {
+				AllowServer = false,
+				DoLog = false
+			});
+		}
+
 		private void OnJoin(JoinEventArgs args)
-			=> TShock.Players[args.Who]?.SetData(VotePlayerData, new PlayerData());
+			=> TShock.Players[args.Who]?.SetData(VotePlayerData, new PlayerData(args.Who));
 
 		private void OnLeave(LeaveEventArgs args)
 			=> TShock.Players[args.Who]?.RemoveData(VotePlayerData);
+
+		private void StartVote(CommandArgs args) {
+			var cmd = args.Parameters.Count > 0 ? args.Parameters[0].ToLower() : "help";
+			var players = args.Parameters.Count < 2 ? null : TShock.Utils.FindPlayer(args.Parameters[1]);
+			var data = args.Player.GetData<PlayerData>(VotePlayerData);
+			if(data.StartedVote != null) {
+				args.Player.SendErrorMessage("You can't initate a new vote until the former one you started ended. ({0}s)",
+					Config.MaxAwaitingVotingTime - (DateTime.UtcNow - data.StartedVote.Time).Seconds);
+				return;
+			}
+
+			Vote vote;
+			switch(cmd) {
+				case "help":
+					#region -- Help --
+					#endregion
+					return;
+				case "ban":
+					#region -- Ban --
+					if(args.Parameters.Count < 2) {
+						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v ban <player>");
+						return;
+					}
+					if(players.Count == 0) {
+						var user = TShock.Users.GetUserByName(args.Parameters[1]);
+						if(user != null) {
+							if(TShock.Groups.GetGroupByName(user.Group).HasPermission(Permissions.immunetoban)) {
+								args.Player.SendErrorMessage("You can't ban {0}!", user.Name);
+								return;
+							}
+						}
+						args.Player.SendErrorMessage("Invalid player or account!");
+						return;
+					}
+					if(players.Count > 1) {
+						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						return;
+					}
+					#endregion
+					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Ban);
+					break;
+				case "kick":
+					#region -- Kick --
+					if(args.Parameters.Count < 2) {
+						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v kick <player>");
+						return;
+					}
+					if(players.Count == 0) {
+						args.Player.SendErrorMessage("Invalid player!");
+						return;
+					}
+					if(players.Count > 1) {
+						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						return;
+					}
+					#endregion
+					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Kick);
+					break;
+				case "mute":
+					#region -- Mute --
+					if(args.Parameters.Count < 2) {
+						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v mute <player>");
+						return;
+					}
+					if(players.Count == 0) {
+						args.Player.SendErrorMessage("Invalid player!");
+						return;
+					}
+					if(players.Count > 1) {
+						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						return;
+					}
+					#endregion
+					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Mute);
+					break;
+				case "kill":
+					#region -- Kill --
+					if(args.Parameters.Count < 2) {
+						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v kill <player>");
+						return;
+					}
+					if(players.Count == 0) {
+						args.Player.SendErrorMessage("Invalid player!");
+						return;
+					}
+					if(players.Count > 1) {
+						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						return;
+					}
+					#endregion
+					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Kill);
+					break;
+				default:
+					if(cmd.StartsWith(Commands.Specifier)) {
+						#region -- Command --
+						var commandText = string.Join(" ", args.Parameters).Remove(0, 1).TrimStart();
+						var commandName = commandText.Contains(" ")
+										&& commandText[commandText.IndexOf(" ", StringComparison.Ordinal) - 1] != '\\'
+							? commandText.Substring(0, commandText.IndexOf(" ", StringComparison.Ordinal))
+							: commandText;
+
+						IEnumerable<Command> cmds = Commands.ChatCommands.FindAll(c => c.HasAlias(commandName));
+						if(!cmds.Any()) {
+							args.Player.SendErrorMessage("Invalid command entered.");
+							return;
+						}
+						if(cmds.Count() > 1) {
+							args.Player.SendErrorMessage("More than one command matched!");
+							return;
+						}
+
+						var command = cmds.ElementAt(0);
+						if(!command.Permissions.Any(Config.ExecutiveGroup.HasPermission)) {
+							args.Player.SendErrorMessage("{0} can't be executed due to lack of permission.");
+							return;
+						}
+						#endregion
+						vote = new Vote(args.Player.User.Name, commandText, VoteType.Command);
+						break;
+					}
+					args.Player.SendErrorMessage("Invalid syntax! Type /vote help for a list of instructions.");
+					return;
+			}
+
+			var timer = new Timer(Config.MaxAwaitingReasonTime * 1000) { AutoReset = false, Enabled = true };
+			timer.Elapsed += (s, e) => Utils.OnReasonTimerElasped(args.Player);
+
+			data.StartedVote = vote;
+			data.AwaitingReason = true;
+			Votes.Add(vote, timer);
+
+			args.Player.AddResponse("reason", obj => Utils.Reason((CommandArgs)obj));
+			args.Player.SendSuccessMessage("Vote will be started after using {0}.", TShock.Utils.ColorTag("/reason <Reason>", Color.Cyan));
+		}
 	}
 }
+
