@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
+using TShockAPI;
 
 namespace Vote {
 	public class Vote {
@@ -16,7 +15,7 @@ namespace Vote {
 		public readonly List<string> Proponents = new List<string>();
 		public readonly List<string> Opponents = new List<string>();
 
-		public Vote(string sponsor, string target) {
+		public Vote(string sponsor, string target, VoteType type) {
 			if(string.IsNullOrWhiteSpace(sponsor))
 				throw new ArgumentNullException(nameof(sponsor));
 			if(string.IsNullOrWhiteSpace(target))
@@ -24,11 +23,54 @@ namespace Vote {
 
 			Sponsor = sponsor;
 			Target = target;
+			Type = type;
 			Time = DateTime.UtcNow;
 		}
 
-		public Vote(string sponsor, string target, DateTime time) : this(sponsor, target) {
+		public Vote(string sponsor, string target, DateTime time, VoteType type) : this(sponsor, target, type) {
 			Time = time;
+		}
+
+		[SuppressMessage("ReSharper", "SwitchStatementMissingSomeCases")]
+		public void Execute() {
+			Succeed = Proponents.Count > Opponents.Count;
+			if(!Succeed)
+				return;
+
+			switch(Type) {
+				case VoteType.Ban:
+					Commands.HandleCommand(VotePlugin.Player, $"/ban add \"{Target}\" \"{Reason}\"");
+					break;
+				case VoteType.Kick:
+				case VoteType.Mute:
+					Commands.HandleCommand(VotePlugin.Player, $"/{Type} \"{Target}\" \"{Reason}\"");
+					break;
+				case VoteType.Kill:
+					Commands.HandleCommand(VotePlugin.Player, $"/{Type} {Target}");
+					break;
+				case VoteType.Command:
+					Commands.HandleCommand(VotePlugin.Player, $"/{Target}");
+					break;
+			}
+
+			Executed = true;
+		}
+
+		public override string ToString() {
+			switch(Type) {
+				case VoteType.Ban:
+					return $"Banning {Target}";
+				case VoteType.Kick:
+					return $"Kicking {Target}";
+				case VoteType.Kill:
+					return $"Killing {Target}";
+				case VoteType.Mute:
+					return $"Muting {Target}";
+				case VoteType.Command:
+					return $"/{Target}";
+				default:
+					throw new InvalidOperationException();
+			}
 		}
 	}
 }
