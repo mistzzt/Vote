@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Timers;
@@ -15,6 +16,7 @@ namespace Vote {
 		internal Dictionary<Vote, Timer> Votes = new Dictionary<Vote, Timer>();
 		internal static TSWheelPlayer Player;
 		internal static Utils Utils;
+		internal static VoteManager VotesHistory;
 
 		public override string Name => "Vote";
 		public override string Author => "MistZZT";
@@ -44,6 +46,7 @@ namespace Vote {
 			Config.LoadGroup();
 			Player = new TSWheelPlayer();
 			Utils = new Utils(this);
+			VotesHistory = new VoteManager(TShock.DB);
 
 			Commands.ChatCommands.Add(new Command("vote.player.startvote", StartVote, "vote", "v") {
 				AllowServer = false,
@@ -57,6 +60,7 @@ namespace Vote {
 		private void OnLeave(LeaveEventArgs args)
 			=> TShock.Players[args.Who]?.RemoveData(VotePlayerData);
 
+		[SuppressMessage("ReSharper", "PossibleNullReferenceException")]
 		private void StartVote(CommandArgs args) {
 			var cmd = args.Parameters.Count > 0 ? args.Parameters[0].ToLower() : "help";
 			var players = args.Parameters.Count < 2 ? null : TShock.Utils.FindPlayer(args.Parameters[1]);
@@ -71,6 +75,31 @@ namespace Vote {
 			switch(cmd) {
 				case "help":
 					#region -- Help --
+					int pageNumber;
+					if(!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+						return;
+
+					var lines = new List<string>
+					{
+							"*** How to sponsor a vote:",
+							"	** /vote <ban/kick/mute/kill> <player>",
+							"	** /reason <Reason>",
+							" * You must give your reason in {0} seconds.".SFormat(Config.MaxAwaitingReasonTime),
+							"*** How to take a vote on an issue:",
+							"	** {0} & {1}".SFormat(TShock.Utils.ColorTag("/assent", Color.SkyBlue), TShock.Utils.ColorTag("/dissent", Color.SkyBlue)),
+							"	** {0} & {1} to confirm/cancel your answer.".SFormat(TShock.Utils.ColorTag("/y", Color.SkyBlue), TShock.Utils.ColorTag("/n", Color.SkyBlue)),
+							" * Use /assent [player] when dealing with more than one votes.",
+							"*** Other things:",
+							" * After {0} seconds, a vote will get its end.".SFormat(Config.MaxAwaitingVotingTime),
+							" * If you have any advice, go to {0} and create an issue."
+						};
+
+					PaginationTools.SendPage(args.Player, pageNumber, lines,
+						new PaginationTools.Settings {
+							HeaderFormat = "Vote instructions ({0}/{1}):",
+							FooterFormat = "Type {0}vote help {{0}} for more instructions.".SFormat(Commands.Specifier)
+						}
+					);
 					#endregion
 					return;
 				case "ban":
@@ -173,7 +202,7 @@ namespace Vote {
 							return;
 						}
 						#endregion
-						vote = new Vote(args.Player.User.Name, commandText, VoteType.Command);
+						vote = new Vote(args.Player.User.Name, $"{Commands.Specifier}{commandText}", VoteType.Command);
 						break;
 					}
 					args.Player.SendErrorMessage("Invalid syntax! Type /vote help for a list of instructions.");
@@ -188,7 +217,7 @@ namespace Vote {
 			Votes.Add(vote, timer);
 
 			args.Player.AddResponse("reason", obj => Utils.Reason((CommandArgs)obj));
-			args.Player.SendSuccessMessage("Vote will be started after using {0}.", TShock.Utils.ColorTag("/reason <Reason>", Color.Cyan));
+			args.Player.SendSuccessMessage("Vote will be started after using {0}.", TShock.Utils.ColorTag("/reason <Reason>", Color.SkyBlue));
 		}
 	}
 }

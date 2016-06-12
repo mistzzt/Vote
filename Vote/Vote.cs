@@ -53,6 +53,7 @@ namespace Vote {
 					break;
 			}
 
+			VotePlugin.VotesHistory.AddVote(this);
 			Executed = true;
 		}
 
