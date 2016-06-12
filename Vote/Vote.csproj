@@ -45,8 +45,11 @@
     <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration.cs" />
     <Compile Include="PlayerData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TSWheelPlayer.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="Vote.cs" />
     <Compile Include="VoteManager.cs" />
     <Compile Include="VotePlugin.cs" />
