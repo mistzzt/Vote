@@ -27,14 +27,14 @@ namespace Vote {
 
 		public override void Initialize() {
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
-			ServerApi.Hooks.ServerJoin.Register(this, OnJoin);
+			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
 			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
 		}
 
 		protected override void Dispose(bool disposing) {
 			if(disposing) {
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
-				ServerApi.Hooks.ServerJoin.Deregister(this, OnJoin);
+				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
 				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
 			}
 			base.Dispose(disposing);
@@ -54,7 +54,7 @@ namespace Vote {
 			});
 		}
 
-		private void OnJoin(JoinEventArgs args)
+		private void OnGreet(GreetPlayerEventArgs args)
 			=> TShock.Players[args.Who]?.SetData(VotePlayerData, new PlayerData(args.Who));
 
 		private void OnLeave(LeaveEventArgs args)

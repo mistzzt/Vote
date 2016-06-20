@@ -203,7 +203,7 @@ namespace Vote {
 
 		internal void PrintMultipleVoteError(TSPlayer player, bool assent) {
 			var count = _instance.Votes.Count;
-			var cmdText = assent ? "/assent" : "dissent";
+			var cmdText = assent ? "/assent" : "/dissent";
 			var text = new List<string> {
 				$"*** As currently there are {count} vote{(count > 1 ? "s":"")}, you have to determine which one to choose."
 			};
