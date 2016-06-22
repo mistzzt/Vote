@@ -27,7 +27,7 @@ namespace Vote {
 
 		public override void Initialize() {
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
-			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet);
+			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet, -100);
 			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
 		}
 
@@ -54,8 +54,33 @@ namespace Vote {
 			});
 		}
 
-		private void OnGreet(GreetPlayerEventArgs args)
-			=> TShock.Players[args.Who]?.SetData(VotePlayerData, new PlayerData(args.Who));
+		private void OnGreet(GreetPlayerEventArgs args) {
+			var ply = TShock.Players[args.Who];
+			if(ply == null)
+				return;
+
+			ply.SetData(VotePlayerData, new PlayerData(args.Who));
+
+			if(!ply.HasPermission("vote.player.vote"))
+				return;
+
+			if(Votes.Count == 0)
+				return;
+
+			foreach (var votePair in Votes) {
+				var vote = votePair.Key;
+
+				ply.GetData<PlayerData>(VotePlayerData).AwaitingVote = true;
+				ply.SendInfoMessage("Vote: {1} for {2} by {0} is in progress.", vote.Sponsor,
+					TShock.Utils.ColorTag(vote.ToString(), Color.SkyBlue),
+					TShock.Utils.ColorTag(vote.Reason, Color.SkyBlue));
+			}
+
+			ply.SendSuccessMessage("Use {0} or {1} to cast a vote in {2} seconds. Otherwise, you will abstain from voting.",
+					TShock.Utils.ColorTag("/assent", Color.Cyan),
+					TShock.Utils.ColorTag("/dissent", Color.Cyan),
+					Config.MaxAwaitingVotingTime);
+		}
 
 		private void OnLeave(LeaveEventArgs args)
 			=> TShock.Players[args.Who]?.RemoveData(VotePlayerData);

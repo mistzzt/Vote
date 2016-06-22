@@ -30,7 +30,7 @@ namespace Vote {
 
 			foreach(var player in TShock.Players.Where(p => p != null && p.IsLoggedIn && p.HasPermission("vote.player.vote"))) {
 				player.GetData<PlayerData>(VotePlugin.VotePlayerData).AwaitingVote = true;
-				player.SendInfoMessage("{0} started a new vote {1} for {2}.", data.StartedVote.Sponsor,
+				player.SendInfoMessage("Vote: {1} for {2} by {0} started.", data.StartedVote.Sponsor,
 					TShock.Utils.ColorTag(data.StartedVote.ToString(), Color.SkyBlue),
 					TShock.Utils.ColorTag(reason, Color.SkyBlue));
 				player.SendSuccessMessage("Use {0} or {1} to cast a vote in {2} seconds. Otherwise, you will abstain from voting.",
@@ -166,8 +166,8 @@ namespace Vote {
 				TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue),
 				vote.Succeed ? "" : "not ",
 				TShock.Utils.ColorTag(vote.Proponents.Count.ToString(), Color.GreenYellow),
-				TShock.Utils.ColorTag(vote.Neutrals.Count.ToString(), Color.White),
-				TShock.Utils.ColorTag(vote.Opponents.Count.ToString(), Color.OrangeRed)), Color.SkyBlue);
+				vote.Neutrals.Count,
+				TShock.Utils.ColorTag(vote.Opponents.Count.ToString(), Color.OrangeRed)), Color.White);
 			VotePlugin.VotesHistory.AddVote(vote);
 			// remove references and responses
 			_instance.Votes.Remove(vote);
