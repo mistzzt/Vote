@@ -119,8 +119,14 @@ namespace Vote {
 				data.OngoingVote.Opponents.Add(args.Player.User.Name);
 			}
 
-			TSPlayer.All.SendInfoMessage("{0} voted on {1}!",
+			if(!VotePlugin.Config.ShowResult)
+				TSPlayer.All.SendInfoMessage("{0} voted on {1}!",
 				args.Player.User.Name,
+				TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
+			else
+				TSPlayer.All.SendInfoMessage("{0} voted {1} {2}!",
+				args.Player.User.Name,
+				TShock.Utils.ColorTag(data.Support ? "for" : "against", Color.OrangeRed),
 				TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
 			TShock.Log.ConsoleInfo($"{args.Player.User.Name} voted {(data.Support ? "for" : "against")} {data.OngoingVote}!");
 

@@ -15,13 +15,13 @@ namespace Vote {
 		public Group ExecutiveGroup { get; private set; }
 
 		[JsonProperty]
-		public int MaxAwaitingVotingTime = 15;
+		public int MaxAwaitingVotingTime = 60;
 
 		[JsonProperty]
-		public int MaxAwaitingReasonTime = 15;
+		public int MaxAwaitingReasonTime = 30;
 
 		[JsonProperty]
-		public int WarningInterval = 1;
+		public bool ShowResult = true;
 
 		internal void LoadGroup() {
 			ExecutiveGroup = TShock.Groups.GetGroupByName(ExecutiveGroupName);
@@ -29,7 +29,7 @@ namespace Vote {
 				if(ExecutiveGroupName == "wheel")
 					LoadWheelGroup();
 				else {
-					TShock.Log.ConsoleError("[Vote] Group {0} doesn't exist, and group wheel will be used.", ExecutiveGroupName);
+					TShock.Log.ConsoleError("[Vote] Group wheel will be used as {0} doesn't exist.", ExecutiveGroupName);
 					LoadWheelGroup();
 				}
 			}
