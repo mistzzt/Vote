@@ -7,6 +7,7 @@ using System.Timers;
 using TerrariaApi.Server;
 using Terraria;
 using TShockAPI;
+using TShockAPI.Hooks;
 
 namespace Vote {
 	[ApiVersion(1, 23)]
@@ -29,6 +30,8 @@ namespace Vote {
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet, -100);
 			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
+
+			GeneralHooks.ReloadEvent += OnReload;
 		}
 
 		protected override void Dispose(bool disposing) {
@@ -36,6 +39,8 @@ namespace Vote {
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
 				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
+
+				GeneralHooks.ReloadEvent -= OnReload;
 			}
 			base.Dispose(disposing);
 		}
@@ -243,6 +248,13 @@ namespace Vote {
 
 			args.Player.AddResponse("reason", obj => Utils.Reason((CommandArgs)obj));
 			args.Player.SendSuccessMessage("Vote will be started after using {0}.", TShock.Utils.ColorTag("/reason <Reason>", Color.SkyBlue));
+		}
+
+		private void OnReload(ReloadEventArgs args) {
+			Config = Configuration.Read(Configuration.FilePath);
+			Config.Write(Configuration.FilePath);
+			Config.LoadGroup();
+			Player = new TSWheelPlayer();
 		}
 	}
 }
