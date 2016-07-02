@@ -64,13 +64,13 @@ namespace Vote {
 		public override string ToString() {
 			switch(Type) {
 				case VoteType.Ban:
-					return $"Banning {Target}";
+					return $"封禁 {Target}";
 				case VoteType.Kick:
-					return $"Kicking {Target}";
+					return $"驱逐 {Target}";
 				case VoteType.Kill:
-					return $"Killing {Target}";
+					return $"杀死 {Target}";
 				case VoteType.Mute:
-					return $"Muting {Target}";
+					return $"禁言 {Target}";
 				case VoteType.Command:
 					return Target;
 				default:

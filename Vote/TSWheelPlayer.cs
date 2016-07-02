@@ -6,32 +6,32 @@ using TShockAPI.DB;
 namespace Vote {
 	[SuppressMessage("ReSharper", "InconsistentNaming")]
 	internal class TSWheelPlayer:TSPlayer {
-		public TSWheelPlayer() : base("Wheel") {
+		public TSWheelPlayer() : base("民意") {
 			Group = VotePlugin.Config.ExecutiveGroup;
-			User = new User { Name = "Wheel" };
+			User = new User { Name = "民意" };
 		}
 
 		public override void SendErrorMessage(string msg) {
 			Console.ForegroundColor = ConsoleColor.Red;
-			Console.WriteLine($"[Vote] Command executing result: {msg}");
+			Console.WriteLine($"[投票] 指令返回: {msg}");
 			Console.ResetColor();
 		}
 
 		public override void SendInfoMessage(string msg) {
 			Console.ForegroundColor = ConsoleColor.Yellow;
-			Console.WriteLine($"[Vote] Command executing result: {msg}");
+			Console.WriteLine($"[投票] 指令返回: {msg}");
 			Console.ResetColor();
 		}
 
 		public override void SendSuccessMessage(string msg) {
 			Console.ForegroundColor = ConsoleColor.Green;
-			Console.WriteLine($"[Vote] Command executing result: {msg}");
+			Console.WriteLine($"[投票] 指令返回: {msg}");
 			Console.ResetColor();
 		}
 
 		public override void SendWarningMessage(string msg) {
 			Console.ForegroundColor = ConsoleColor.DarkRed;
-			Console.WriteLine($"[Vote] Command executing result: {msg}");
+			Console.WriteLine($"[投票] 指令返回: {msg}");
 			Console.ResetColor();
 		}
 
@@ -40,7 +40,7 @@ namespace Vote {
 		}
 
 		public override void SendMessage(string msg, byte red, byte green, byte blue) {
-			Console.WriteLine($"[Vote] Command executing result: {msg}");
+			Console.WriteLine($"[投票] 指令返回: {msg}");
 		}
 	}
 }

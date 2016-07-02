@@ -9,18 +9,18 @@ namespace Vote {
 	internal class Configuration {
 		public static readonly string FilePath = Path.Combine(TShock.SavePath, "vote.json");
 
-		[JsonProperty("ExecutiveGroup")]
+		[JsonProperty("执行组")]
 		public string ExecutiveGroupName = "wheel";
 
 		public Group ExecutiveGroup { get; private set; }
 
-		[JsonProperty]
+		[JsonProperty("单次投票持续时间")]
 		public int MaxAwaitingVotingTime = 60;
 
-		[JsonProperty]
+		[JsonProperty("单次原因等待时间")]
 		public int MaxAwaitingReasonTime = 30;
 
-		[JsonProperty]
+		[JsonProperty("显示玩家投票结果")]
 		public bool ShowResult = true;
 
 		internal void LoadGroup() {
@@ -29,7 +29,7 @@ namespace Vote {
 				if(ExecutiveGroupName == "wheel")
 					LoadWheelGroup();
 				else {
-					TShock.Log.ConsoleError("[Vote] Group wheel will be used as {0} doesn't exist.", ExecutiveGroupName);
+					TShock.Log.ConsoleError("[投票] 组 {0} 不存在, 插件将使用默认组.", ExecutiveGroupName);
 					LoadWheelGroup();
 				}
 			}

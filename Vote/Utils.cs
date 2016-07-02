@@ -16,8 +16,8 @@ namespace Vote {
 			var data = args.Player.GetData<PlayerData>(VotePlugin.VotePlayerData);
 			if(args.Parameters.Count == 0) {
 				data.AwaitingReason = true;
-				args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /reason <Reason>");
-				args.Player.SendInfoMessage("You still have {0} seconds to enter your reason using {1}.", VotePlugin.Config.MaxAwaitingReasonTime - (int)(DateTime.UtcNow - data.StartedVote.Time).TotalSeconds, TShock.Utils.ColorTag("/reason <Reason>", Color.Cyan));
+				args.Player.SendErrorMessage("语法无效! 正确语法: /reason(因) <原因>");
+				args.Player.SendInfoMessage("你还剩 {0} 秒可以输入原因.", VotePlugin.Config.MaxAwaitingReasonTime - (int)(DateTime.UtcNow - data.StartedVote.Time).TotalSeconds);
 				return;
 			}
 
@@ -31,25 +31,25 @@ namespace Vote {
 
 			foreach(var player in TShock.Players.Where(p => p != null && p.IsLoggedIn && p.HasPermission("vote.player.vote"))) {
 				player.GetData<PlayerData>(VotePlugin.VotePlayerData).AwaitingVote = true;
-				player.SendInfoMessage("Vote: {1} for {2} by {0} started.", data.StartedVote.Sponsor,
+				player.SendInfoMessage("{0} 发起了投票{1}. 原因: {2}.", data.StartedVote.Sponsor,
 					TShock.Utils.ColorTag(data.StartedVote.ToString(), Color.SkyBlue),
 					TShock.Utils.ColorTag(reason, Color.SkyBlue));
-				player.SendSuccessMessage("Use {0} or {1} to cast a vote in {2} seconds. Otherwise, you will abstain from voting.",
-					TShock.Utils.ColorTag("/assent", Color.Cyan),
-					TShock.Utils.ColorTag("/dissent", Color.Cyan),
+				player.SendSuccessMessage("输入 {0} 或 {1} 以参与投票. 否则 {2} 秒后, 系统视为自动弃权.",
+					TShock.Utils.ColorTag("/赞成(assent)", Color.Cyan),
+					TShock.Utils.ColorTag("/反对(dissent)", Color.Cyan),
 					VotePlugin.Config.MaxAwaitingVotingTime);
 			}
 
-			TShock.Log.ConsoleInfo("{0} started a new vote {1} for {2}.", args.Player.User.Name, data.StartedVote, reason);
+			TShock.Log.ConsoleInfo("{0} 发起了投票{1}. 原因: {2}.", args.Player.User.Name, data.StartedVote, reason);
 		}
 
 		internal void Vote(CommandArgs args) {
 			if(!args.Player.HasPermission("vote.player.vote")) {
-				args.Player.SendErrorMessage("You don't have permission to vote!");
+				args.Player.SendErrorMessage("你没有投票的权限!");
 				return;
 			}
 
-			var assent = args.Message.ToLower().StartsWith("assent");
+			var assent = args.Message.ToLower().StartsWith("assent") || args.Message.ToLower().StartsWith("赞成");
 			var data = args.Player.GetData<PlayerData>(VotePlugin.VotePlayerData);
 			Vote vote;
 
@@ -64,7 +64,7 @@ namespace Vote {
 				var players = TShock.Utils.FindPlayer(args.Parameters[0]);
 				if(players.Count == 0) {
 					data.AwaitingVote = true;
-					args.Player.SendErrorMessage("Invalid player!");
+					args.Player.SendErrorMessage("玩家名无效!");
 					return;
 				}
 				if(players.Count > 1) {
@@ -75,12 +75,12 @@ namespace Vote {
 				var targetData = players[0].GetData<PlayerData>(VotePlugin.VotePlayerData);
 				if(targetData.StartedVote == null) {
 					data.AwaitingVote = true;
-					args.Player.SendErrorMessage("Invalid player!");
+					args.Player.SendErrorMessage("玩家名无效!");
 					return;
 				}
 				if(data.OngoingVote != null && data.OngoingVote != targetData.StartedVote) {
 					data.AwaitingVote = true;
-					args.Player.SendErrorMessage("You must first finish {0} (by {1}).",
+					args.Player.SendErrorMessage("你必须先投票给 {0} ({1} 发起).",
 						TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.LightCyan),
 						TShock.Utils.ColorTag(data.OngoingVote.Sponsor, Color.LightCyan));
 					return;
@@ -90,14 +90,14 @@ namespace Vote {
 			}
 
 			if(vote.Opponents.Intersect(vote.Proponents).Contains(args.Player.User.Name)) {
-				args.Player.SendErrorMessage("You have voted on this issue!");
+				args.Player.SendErrorMessage("你已经投过票了!");
 				return;
 			}
 
-			args.Player.SendInfoMessage("Really vote {0} {1}?",
-					TShock.Utils.ColorTag(assent ? "for" : "against", Color.OrangeRed),
+			args.Player.SendInfoMessage("真的要投票 {0} {1}?",
+					TShock.Utils.ColorTag(assent ? "支持" : "反对", Color.OrangeRed),
 					TShock.Utils.ColorTag(vote.ToString(), Color.Cyan));
-			args.Player.SendInfoMessage("Use {0} to confirm, {1} to cancel.", TShock.Utils.ColorTag("/y", Color.SkyBlue), TShock.Utils.ColorTag("/n", Color.SkyBlue));
+			args.Player.SendInfoMessage("输入 {0} 以确定, {1} 以退出.", TShock.Utils.ColorTag("/y", Color.SkyBlue), TShock.Utils.ColorTag("/n", Color.SkyBlue));
 
 			data.OngoingVote = vote;
 			data.Support = assent;
@@ -113,9 +113,9 @@ namespace Vote {
 				data.AwaitingConfirm = false;
 				data.AwaitingVote = true;
 				data.OngoingVote = null;
-				args.Player.SendSuccessMessage("Your answer was canceled. Use {0} or {1} to cast a vote.",
-					TShock.Utils.ColorTag("/assent", Color.Cyan),
-					TShock.Utils.ColorTag("/dissent", Color.Cyan));
+				args.Player.SendSuccessMessage("你的选择已被取消; 使用 {0} 或 {1} 投票.",
+					TShock.Utils.ColorTag("/赞成(assent)", Color.Cyan),
+					TShock.Utils.ColorTag("/反对(dissent)", Color.Cyan));
 				return;
 			}
 
@@ -126,15 +126,15 @@ namespace Vote {
 			}
 
 			if(!VotePlugin.Config.ShowResult)
-				TSPlayer.All.SendInfoMessage("{0} voted on {1}!",
+				TSPlayer.All.SendInfoMessage("{0} 投票给了 {1}!",
 				args.Player.User.Name,
 				TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
 			else
-				TSPlayer.All.SendInfoMessage("{0} voted {1} {2}!",
+				TSPlayer.All.SendInfoMessage("{0} 投票{1}了 {2}!",
 				args.Player.User.Name,
-				TShock.Utils.ColorTag(data.Support ? "for" : "against", Color.OrangeRed),
+				TShock.Utils.ColorTag(data.Support ? "赞成" : "反对", Color.OrangeRed),
 				TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
-			TShock.Log.ConsoleInfo($"{args.Player.User.Name} voted {(data.Support ? "for" : "against")} {data.OngoingVote}!");
+			TShock.Log.ConsoleInfo($"{args.Player.User.Name} 投票{(data.Support ? "赞成" : "反对")}了 {data.OngoingVote}!");
 
 			data.OngoingVote = null;
 			data.Support = false;
@@ -153,7 +153,7 @@ namespace Vote {
 			
 			data.StartedVote = null;
 
-			player.SendErrorMessage("You haven't given your reason, so your vote is canceled.");
+			player.SendErrorMessage("你没有在时限内给出你的原因, 投票已被取消.");
 		}
 
 		internal void OnVoteTimerElasped(Vote vote) {
@@ -164,27 +164,27 @@ namespace Vote {
 					data.AwaitingVote = data.AwaitingConfirm = false;
 				// sponsor of vote
 				if(data.StartedVote == vote) {
-					p.SendMessage($"Your vote {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)} has expired.", Color.Azure);
+					p.SendMessage($"你发起的投票——{TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)}——已经过期.", Color.Azure);
 					data.AwaitingReason = false;
 					data.StartedVote = null;
 				}
 				// those who /assent or /dissent but not /y
 				if(data.OngoingVote == vote) {
-					p.SendErrorMessage($"The vote {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)} has expired. You haven't confirmed.");
+					p.SendErrorMessage($"投票——{TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)}——已结束. 你没有确认你的选择(/y).");
 					data.AwaitingConfirm = false;
 					data.OngoingVote = null;
 				}
 				// those who don't type /assent or /dissent
 				if(vote.Opponents.All(n => p.User.Name != n) && vote.Proponents.All(n => p.User.Name != n)) {
 					vote.Neutrals.Add(p.User.Name);
-					p.SendMessage($"You have abstained from voting on {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)}.", Color.Azure);
+					p.SendMessage($"投票——{TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)}——已弃权.", Color.Azure);
 				}
 			});
 			if(vote.CheckPass())
 				vote.Execute();
-			TSPlayer.All.SendMessage(string.Format("{0} has {1}passed. ({2} : {3} : {4})",
+			TSPlayer.All.SendMessage(string.Format("{0} {1}通过. ({2} : {3} : {4})",
 				TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue),
-				vote.Succeed ? "" : "not ",
+				vote.Succeed ? "成功" : "未",
 				TShock.Utils.ColorTag(vote.Proponents.Count.ToString(), Color.GreenYellow),
 				vote.Neutrals.Count,
 				TShock.Utils.ColorTag(vote.Opponents.Count.ToString(), Color.OrangeRed)), Color.White);
@@ -199,17 +199,24 @@ namespace Vote {
 			if(remove) {
 				player.AwaitingResponse.Remove("assent");
 				player.AwaitingResponse.Remove("dissent");
+				player.AwaitingResponse.Remove("赞成");
+				player.AwaitingResponse.Remove("反对");
 			} else {
 				player.AddResponse("assent", obj => Vote((CommandArgs)obj));
 				player.AddResponse("dissent", obj => Vote((CommandArgs)obj));
+				player.AddResponse("赞成", obj => Vote((CommandArgs)obj));
+				player.AddResponse("反对", obj => Vote((CommandArgs)obj));
 			}
 		}
 
 		internal void AwaitReason(TSPlayer player, bool remove) {
-			if(remove)
+			if(remove) {
 				player.AwaitingResponse.Remove("reason");
-			else
+				player.AwaitingResponse.Remove("因");
+			} else {
 				player.AddResponse("reason", obj => Reason((CommandArgs)obj));
+				player.AddResponse("因", obj => Reason((CommandArgs)obj));
+			}
 		}
 
 		internal void AwaitConfirm(TSPlayer player, bool remove) {
@@ -223,12 +230,11 @@ namespace Vote {
 		}
 
 		internal void PrintMultipleVoteError(TSPlayer player, bool assent) {
-			var count = _instance.Votes.Count;
-			var cmdText = assent ? "/assent" : "/dissent";
+			var cmdText = assent ? "/赞成" : "/反对";
 			var text = new List<string> {
-				$"*** As currently there are {count} vote{(count > 1 ? "s":"")}, you have to determine which one to choose."
+				"*** 当前存在多个投票, 你需要指明投票的发起者."
 			};
-			text.AddRange(_instance.Votes.Keys.Select(v => $"  * {v} (by {v.Sponsor}) -- {TShock.Utils.ColorTag($"{cmdText} {v.Sponsor}", Color.Cyan)}"));
+			text.AddRange(_instance.Votes.Keys.Select(v => $"  * {v} ({v.Sponsor} 发起) -- {TShock.Utils.ColorTag($"{cmdText} {v.Sponsor}", Color.Cyan)}"));
 
 			text.ForEach(player.SendErrorMessage);
 		}

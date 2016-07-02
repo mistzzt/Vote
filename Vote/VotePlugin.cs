@@ -51,7 +51,7 @@ namespace Vote {
 			Utils = new Utils(this);
 			VotesHistory = new VoteManager(TShock.DB);
 
-			Commands.ChatCommands.Add(new Command("vote.player.startvote", StartVote, "vote", "v") {
+			Commands.ChatCommands.Add(new Command("vote.player.startvote", StartVote, "vote", "投票", "v") {
 				AllowServer = false,
 				DoLog = false
 			});
@@ -75,16 +75,16 @@ namespace Vote {
 				var vote = votePair.Key;
 
 				data.AwaitingVote = true;
-				ply.SendInfoMessage("Vote: {1} for {2} by {0} is in progress. ({3}s last)", vote.Sponsor,
+				ply.SendInfoMessage("投票——因{2}, 故{0}发起{1}——正在进行中. ({3}s后结束)", vote.Sponsor,
 					TShock.Utils.ColorTag(vote.ToString(), Color.SkyBlue),
 					TShock.Utils.ColorTag(vote.Reason, Color.SkyBlue),
 					 Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - vote.Time).TotalSeconds);
 			}
 
 			if(data.AwaitingVote)
-				ply.SendSuccessMessage("Use {0} or {1} to cast a vote.",
-					TShock.Utils.ColorTag("/assent", Color.Cyan),
-					TShock.Utils.ColorTag("/dissent", Color.Cyan));
+				ply.SendSuccessMessage("输入 {0} 或 {1} 以参与投票",
+					TShock.Utils.ColorTag("/赞成", Color.Cyan),
+					TShock.Utils.ColorTag("/反对", Color.Cyan));
 		}
 
 		[SuppressMessage("ReSharper", "PossibleNullReferenceException")]
@@ -93,13 +93,14 @@ namespace Vote {
 			var players = args.Parameters.Count < 2 ? null : TShock.Utils.FindPlayer(args.Parameters[1]);
 			var data = args.Player.GetData<PlayerData>(VotePlayerData);
 			if(data.StartedVote != null) {
-				args.Player.SendErrorMessage("You can't initate a new vote until the former one you started ended. ({0}s)",
+				args.Player.SendErrorMessage("你上次发起的投票还未结束. ({0}s)",
 					Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - data.StartedVote.Time).TotalSeconds);
 				return;
 			}
 
 			Vote vote;
 			switch(cmd) {
+				case "帮助":
 				case "help":
 					#region -- Help --
 					int pageNumber;
@@ -108,42 +109,43 @@ namespace Vote {
 
 					var lines = new List<string>
 					{
-							"*** How to sponsor a vote:",
-							"	** /vote <ban/kick/mute/kill> <player>",
-							"	** /reason <Reason>",
-							" * You must give your reason in {0} seconds.".SFormat(Config.MaxAwaitingReasonTime),
-							"*** How to take a vote on an issue:",
-							"	** {0} & {1}".SFormat(TShock.Utils.ColorTag("/assent", Color.SkyBlue), TShock.Utils.ColorTag("/dissent", Color.SkyBlue)),
-							"	** {0} & {1} to confirm/cancel your answer.".SFormat(TShock.Utils.ColorTag("/y", Color.SkyBlue), TShock.Utils.ColorTag("/n", Color.SkyBlue)),
-							" * Use /assent [player] when dealing with more than one votes.",
-							"*** Other things:",
-							" * After {0} seconds, a vote will get its end.".SFormat(Config.MaxAwaitingVotingTime),
-							" * If you have any advice, create an issue here {0}.".SFormat("https://github.com/mistzzt/Vote/")
+							"*** 如何发起投票:",
+							"	** /vote(投票) <ban/kick/mute/kill> <玩家名>",
+							"	** /reason(因) <原因>",
+							" * 你必须在 {0} 秒内给出你的原因, 否则投票取消.".SFormat(Config.MaxAwaitingReasonTime),
+							"*** 如何参与投票:",
+							"	** {0} & {1}".SFormat(TShock.Utils.ColorTag("/赞成(assent)", Color.SkyBlue), TShock.Utils.ColorTag("/反对(dissent)", Color.SkyBlue)),
+							"	** {0} & {1} 以确定投票.".SFormat(TShock.Utils.ColorTag("/y", Color.SkyBlue), TShock.Utils.ColorTag("/n", Color.SkyBlue)),
+							" * /assent [发起者] 可以在多个投票中选择.",
+							"*** 一些其他事项:",
+							" * {0} 秒后投票结束, 未投票的玩家将视为弃权.".SFormat(Config.MaxAwaitingVotingTime),
+							" * 如果你有任何建议, 在这里添加ISSUE: {0}.".SFormat("https://github.com/mistzzt/Vote/")
 						};
 
 					PaginationTools.SendPage(args.Player, pageNumber, lines,
 						new PaginationTools.Settings {
-							HeaderFormat = "Vote instructions ({0}/{1}):",
-							FooterFormat = "Type {0}vote help {{0}} for more instructions.".SFormat(Commands.Specifier)
+							HeaderFormat = "投票说明 ({0}/{1}):",
+							FooterFormat = "键入 {0}vote help {{0}} 以查看更多说明.".SFormat(Commands.Specifier)
 						}
 					);
 					#endregion
 					return;
+				case "封禁":
 				case "ban":
 					#region -- Ban --
 					if(args.Parameters.Count < 2) {
-						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v ban <player>");
+						args.Player.SendErrorMessage("语法无效! 正确语法: /v ban <玩家名>");
 						return;
 					}
 					if(players.Count == 0) {
 						var user = TShock.Users.GetUserByName(args.Parameters[1]);
 						if(user != null) {
 							if(TShock.Groups.GetGroupByName(user.Group).HasPermission(Permissions.immunetoban)) {
-								args.Player.SendErrorMessage("You can't ban {0}!", user.Name);
+								args.Player.SendErrorMessage("你无法封禁 {0}!", user.Name);
 								return;
 							}
 						}
-						args.Player.SendErrorMessage("Invalid player or account!");
+						args.Player.SendErrorMessage("玩家名或账户名无效!");
 						return;
 					}
 					if(players.Count > 1) {
@@ -153,14 +155,15 @@ namespace Vote {
 					#endregion
 					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Ban);
 					break;
+				case "驱逐":
 				case "kick":
 					#region -- Kick --
 					if(args.Parameters.Count < 2) {
-						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v kick <player>");
+						args.Player.SendErrorMessage("语法无效! 正确语法: /v kick <玩家名>");
 						return;
 					}
 					if(players.Count == 0) {
-						args.Player.SendErrorMessage("Invalid player!");
+						args.Player.SendErrorMessage("玩家名无效!");
 						return;
 					}
 					if(players.Count > 1) {
@@ -170,14 +173,15 @@ namespace Vote {
 					#endregion
 					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Kick);
 					break;
+				case "禁言":
 				case "mute":
 					#region -- Mute --
 					if(args.Parameters.Count < 2) {
-						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v mute <player>");
+						args.Player.SendErrorMessage("语法无效! 正确语法: /v mute <玩家名>");
 						return;
 					}
 					if(players.Count == 0) {
-						args.Player.SendErrorMessage("Invalid player!");
+						args.Player.SendErrorMessage("玩家名无效!");
 						return;
 					}
 					if(players.Count > 1) {
@@ -187,14 +191,15 @@ namespace Vote {
 					#endregion
 					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Mute);
 					break;
+				case "杀":
 				case "kill":
 					#region -- Kill --
 					if(args.Parameters.Count < 2) {
-						args.Player.SendErrorMessage("Invalid syntax! Proper syntax: /v kill <player>");
+						args.Player.SendErrorMessage("语法无效! 正确语法: /v kill <玩家名>");
 						return;
 					}
 					if(players.Count == 0) {
-						args.Player.SendErrorMessage("Invalid player!");
+						args.Player.SendErrorMessage("玩家名无效!");
 						return;
 					}
 					if(players.Count > 1) {
@@ -215,24 +220,24 @@ namespace Vote {
 
 						IEnumerable<Command> cmds = Commands.ChatCommands.FindAll(c => c.HasAlias(commandName));
 						if(!cmds.Any()) {
-							args.Player.SendErrorMessage("Invalid command entered.");
+							args.Player.SendErrorMessage("未找到此指令.");
 							return;
 						}
 						if(cmds.Count() > 1) {
-							args.Player.SendErrorMessage("More than one command matched!");
+							args.Player.SendErrorMessage("存在相同名称的多个指令!");
 							return;
 						}
 
 						var command = cmds.ElementAt(0);
 						if(!command.Permissions.Any(Config.ExecutiveGroup.HasPermission)) {
-							args.Player.SendErrorMessage("{0} can't be executed due to lack of permission.");
+							args.Player.SendErrorMessage("缺少执行该指令的权限, 无法投票执行.");
 							return;
 						}
 						#endregion
 						vote = new Vote(args.Player.User.Name, $"{Commands.Specifier}{commandText}", VoteType.Command);
 						break;
 					}
-					args.Player.SendErrorMessage("Invalid syntax! Type /vote help for a list of instructions.");
+					args.Player.SendErrorMessage("语法无效! 输入 /vote help 获取帮助.");
 					return;
 			}
 
@@ -243,7 +248,7 @@ namespace Vote {
 			data.AwaitingReason = true;
 			Votes.Add(vote, timer);
 
-			args.Player.SendSuccessMessage("Vote will be started after using {0}.", TShock.Utils.ColorTag("/reason <Reason>", Color.SkyBlue));
+			args.Player.SendSuccessMessage("使用 {0} 以继续发起投票.", TShock.Utils.ColorTag("/因 <原因>", Color.SkyBlue));
 		}
 
 		private void OnReload(ReloadEventArgs args) {
