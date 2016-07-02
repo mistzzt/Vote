@@ -72,16 +72,17 @@ namespace Vote {
 			if(Votes.Count == 0)
 				return;
 
-			foreach (var votePair in Votes) {
+			foreach (var votePair in Votes.Where(v => v.Key.Proponents.All(name => !name.Equals(ply.User.Name)) && v.Key.Opponents.All(name => !name.Equals(ply.User.Name)))) {
 				var vote = votePair.Key;
 
 				ply.GetData<PlayerData>(VotePlayerData).AwaitingVote = true;
-				ply.SendInfoMessage("Vote: {1} for {2} by {0} is in progress.", vote.Sponsor,
+				ply.SendInfoMessage("Vote: {1} for {2} by {0} is in progress. ({3}s last)", vote.Sponsor,
 					TShock.Utils.ColorTag(vote.ToString(), Color.SkyBlue),
-					TShock.Utils.ColorTag(vote.Reason, Color.SkyBlue));
+					TShock.Utils.ColorTag(vote.Reason, Color.SkyBlue),
+					 Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - vote.Time).TotalSeconds);
 			}
 
-			ply.SendSuccessMessage("Use {0} or {1} to cast a vote in {2} seconds. Otherwise, you will abstain from voting.",
+			ply.SendSuccessMessage("Use {0} or {1} to cast a vote.",
 					TShock.Utils.ColorTag("/assent", Color.Cyan),
 					TShock.Utils.ColorTag("/dissent", Color.Cyan),
 					Config.MaxAwaitingVotingTime);
@@ -246,7 +247,6 @@ namespace Vote {
 			data.AwaitingReason = true;
 			Votes.Add(vote, timer);
 
-			args.Player.AddResponse("reason", obj => Utils.Reason((CommandArgs)obj));
 			args.Player.SendSuccessMessage("Vote will be started after using {0}.", TShock.Utils.ColorTag("/reason <Reason>", Color.SkyBlue));
 		}
 

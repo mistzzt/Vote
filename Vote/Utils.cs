@@ -24,6 +24,7 @@ namespace Vote {
 			var reason = string.Join(" ", args.Parameters);
 			var timer = _instance.Votes[data.StartedVote];
 			data.StartedVote.Reason = reason;
+			data.AwaitingReason = false;
 			timer.Enabled = false;
 			timer = _instance.Votes[data.StartedVote] = new Timer(VotePlugin.Config.MaxAwaitingVotingTime * 1000) { AutoReset = false, Enabled = true };
 			timer.Elapsed += (s, e) => OnVoteTimerElasped(data.StartedVote);
