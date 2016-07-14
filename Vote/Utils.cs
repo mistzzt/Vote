@@ -141,11 +141,16 @@ namespace Vote {
 			data.AwaitingConfirm = false;
 		}
 
-		internal void OnReasonTimerElasped(TSPlayer player) {
+		internal void OnReasonTimerElasped(Vote vote, TSPlayer player) {
+			_instance.Votes.Remove(vote);
+
+			if (player == null || !player.Active || vote.Sponsor != player.Name)
+				return;
+
 			var data = player.GetData<PlayerData>(VotePlugin.VotePlayerData);
 
 			data.AwaitingReason = false;
-			_instance.Votes.Remove(data.StartedVote);
+			
 			data.StartedVote = null;
 
 			player.SendErrorMessage("You haven't given your reason, so your vote is canceled.");

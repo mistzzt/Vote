@@ -237,7 +237,7 @@ namespace Vote {
 			}
 
 			var timer = new Timer(Config.MaxAwaitingReasonTime * 1000) { AutoReset = false, Enabled = true };
-			timer.Elapsed += (s, e) => Utils.OnReasonTimerElasped(args.Player);
+			timer.Elapsed += (s, e) => Utils.OnReasonTimerElasped(vote, args.Player);
 
 			data.StartedVote = vote;
 			data.AwaitingReason = true;
