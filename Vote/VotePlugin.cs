@@ -29,7 +29,6 @@ namespace Vote {
 		public override void Initialize() {
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet, -100);
-			ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
 
 			GeneralHooks.ReloadEvent += OnReload;
 		}
@@ -38,7 +37,6 @@ namespace Vote {
 			if(disposing) {
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
-				ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
 
 				GeneralHooks.ReloadEvent -= OnReload;
 			}
@@ -64,7 +62,8 @@ namespace Vote {
 			if(ply == null)
 				return;
 
-			ply.SetData(VotePlayerData, new PlayerData(args.Who));
+			var data = new PlayerData(args.Who);
+			ply.SetData(VotePlayerData, data);
 
 			if(!ply.HasPermission("vote.player.vote"))
 				return;
@@ -75,21 +74,18 @@ namespace Vote {
 			foreach (var votePair in Votes.Where(v => v.Key.Proponents.All(name => !name.Equals(ply.User.Name)) && v.Key.Opponents.All(name => !name.Equals(ply.User.Name)))) {
 				var vote = votePair.Key;
 
-				ply.GetData<PlayerData>(VotePlayerData).AwaitingVote = true;
+				data.AwaitingVote = true;
 				ply.SendInfoMessage("Vote: {1} for {2} by {0} is in progress. ({3}s last)", vote.Sponsor,
 					TShock.Utils.ColorTag(vote.ToString(), Color.SkyBlue),
 					TShock.Utils.ColorTag(vote.Reason, Color.SkyBlue),
 					 Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - vote.Time).TotalSeconds);
 			}
 
-			ply.SendSuccessMessage("Use {0} or {1} to cast a vote.",
+			if(data.AwaitingVote)
+				ply.SendSuccessMessage("Use {0} or {1} to cast a vote.",
 					TShock.Utils.ColorTag("/assent", Color.Cyan),
-					TShock.Utils.ColorTag("/dissent", Color.Cyan),
-					Config.MaxAwaitingVotingTime);
+					TShock.Utils.ColorTag("/dissent", Color.Cyan));
 		}
-
-		private void OnLeave(LeaveEventArgs args)
-			=> TShock.Players[args.Who]?.RemoveData(VotePlayerData);
 
 		[SuppressMessage("ReSharper", "PossibleNullReferenceException")]
 		private void StartVote(CommandArgs args) {

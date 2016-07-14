@@ -89,6 +89,11 @@ namespace Vote {
 				vote = targetData.StartedVote;
 			}
 
+			if(vote.Opponents.Intersect(vote.Proponents).Contains(args.Player.User.Name)) {
+				args.Player.SendErrorMessage("You have voted on this issue!");
+				return;
+			}
+
 			args.Player.SendInfoMessage("Really vote {0} {1}?",
 					TShock.Utils.ColorTag(assent ? "for" : "against", Color.OrangeRed),
 					TShock.Utils.ColorTag(vote.ToString(), Color.Cyan));
@@ -149,6 +154,9 @@ namespace Vote {
 		internal void OnVoteTimerElasped(Vote vote) {
 			TShock.Players.Where(p => p != null).ForEach(p => {
 				var data = p.GetData<PlayerData>(VotePlugin.VotePlayerData);
+
+				if(_instance.Votes.Count == 1)
+					data.AwaitingVote = data.AwaitingConfirm = false;
 				// sponsor of vote
 				if(data.StartedVote == vote) {
 					p.SendMessage($"Your vote {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)} has expired.", Color.Azure);
@@ -175,6 +183,7 @@ namespace Vote {
 				TShock.Utils.ColorTag(vote.Proponents.Count.ToString(), Color.GreenYellow),
 				vote.Neutrals.Count,
 				TShock.Utils.ColorTag(vote.Opponents.Count.ToString(), Color.OrangeRed)), Color.White);
+			TShock.Log.ConsoleInfo("{0} has {1}passed. ({2} : {3} : {4})", vote.ToString(), vote.Succeed ? "" : "not ", vote.Proponents.Count.ToString(), vote.Neutrals.Count.ToString(), vote.Opponents.Count.ToString());
 			VotePlugin.VotesHistory.AddVote(vote);
 			// remove references and responses
 			_instance.Votes.Remove(vote);
