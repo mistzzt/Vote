@@ -10,7 +10,7 @@ using TShockAPI;
 using TShockAPI.Hooks;
 
 namespace Vote {
-	[ApiVersion(1, 23)]
+	[ApiVersion(1, 24)]
 	public class VotePlugin:TerrariaPlugin {
 		public const string VotePlayerData = "votedata";
 		internal static Configuration Config;
