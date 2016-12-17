@@ -4,13 +4,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Timers;
+using Microsoft.Xna.Framework;
 using TerrariaApi.Server;
 using Terraria;
 using TShockAPI;
 using TShockAPI.Hooks;
 
 namespace Vote {
-	[ApiVersion(1, 25)]
+	[ApiVersion(2, 0)]
 	public class VotePlugin:TerrariaPlugin {
 		public const string VotePlayerData = "votedata";
 		internal static Configuration Config;

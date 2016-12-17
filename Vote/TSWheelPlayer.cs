@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Xna.Framework;
 using TShockAPI;
 using TShockAPI.DB;
 
