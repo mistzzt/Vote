@@ -67,27 +67,40 @@ namespace Vote
 			}
 			else
 			{
-				var players = TShock.Utils.FindPlayer(args.Parameters[0]);
-				if (players.Count == 0)
+				var spNameLower = args.Parameters[0].ToLowerInvariant();
+				var list = new List<Vote>();
+				foreach (var v in VotePlugin.Votes)
+				{
+					var sp = v.Sponsor.ToLowerInvariant();
+					if (sp.Equals(spNameLower, StringComparison.Ordinal))
+					{
+						list.Add(v);
+						break;
+					}
+					if (sp.StartsWith(spNameLower))
+					{
+						list.Add(v);
+					}
+				}
+
+				if (list.Count == 1)
+				{
+					vote = list.Single();
+				}
+				else if (list.Count > 1)
 				{
 					data.AwaitingVote = true;
-					args.Player.SendErrorMessage("Invalid player!");
+					TShock.Utils.SendMultipleMatchError(args.Player, list.Select(l => l.Sponsor));
 					return;
 				}
-				if (players.Count > 1)
+				else
 				{
 					data.AwaitingVote = true;
-					TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+					args.Player.SendErrorMessage("Invalid sponsor name!");
 					return;
 				}
-				var targetData = PlayerData.GetData(players[0]);
-				if (targetData.StartedVote == null)
-				{
-					data.AwaitingVote = true;
-					args.Player.SendErrorMessage("Invalid player!");
-					return;
-				}
-				if (data.OngoingVote != null && data.OngoingVote != targetData.StartedVote)
+
+				if (data.OngoingVote != null && data.OngoingVote != vote)
 				{
 					data.AwaitingVote = true;
 					args.Player.SendErrorMessage("You must first finish {0} (by {1}).",
@@ -95,12 +108,11 @@ namespace Vote
 						TShock.Utils.ColorTag(data.OngoingVote.Sponsor, Color.LightCyan));
 					return;
 				}
-
-				vote = targetData.StartedVote;
 			}
 
 			if (vote.Opponents.Union(vote.Proponents).Contains(args.Player.User.Name))
 			{
+				data.AwaitingVote = true;
 				args.Player.SendErrorMessage("You have voted on this issue!");
 				return;
 			}
@@ -156,6 +168,7 @@ namespace Vote
 			data.OngoingVote = null;
 			data.Support = false;
 			data.AwaitingConfirm = false;
+			data.AwaitingVote = VotePlugin.Votes.Count > 1;
 		}
 
 		internal static void OnReasonTimerElasped(Vote vote, TSPlayer player)

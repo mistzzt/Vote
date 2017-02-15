@@ -77,12 +77,7 @@ namespace Vote
 			if (Votes.Count == 0)
 				return;
 
-			foreach (var vote in Votes
-										.Where(v => 
-													v.Proponents.All(name => !name.Equals(ply.User.Name)) &&
-													v.Opponents.All(name => !name.Equals(ply.User.Name))
-												)
-														)
+			foreach (var vote in Votes.Where(v => v.Proponents.Union(v.Opponents).All(name => !name.Equals(ply.User.Name))))
 			{
 				data.AwaitingVote = true;
 				ply.SendInfoMessage("Vote: {1} for {2} by {0} is in progress. ({3}s last)", vote.Sponsor,
@@ -252,26 +247,26 @@ namespace Vote
 							? commandText.Substring(0, commandText.IndexOf(" ", StringComparison.Ordinal))
 							: commandText;
 
-						IEnumerable<Command> cmds = Commands.ChatCommands.FindAll(c => c.HasAlias(commandName));
-						if (!cmds.Any())
+						var cmds = Commands.ChatCommands.FindAll(c => c.HasAlias(commandName));
+						if (cmds.Count == 0)
 						{
 							args.Player.SendErrorMessage("Invalid command entered.");
 							return;
 						}
-						if (cmds.Count() > 1)
+						if (cmds.Count > 1)
 						{
 							args.Player.SendErrorMessage("More than one command matched!");
 							return;
 						}
 
-						var command = cmds.ElementAt(0);
+						var command = cmds[0];
 						if (!command.Permissions.Any(Config.ExecutiveGroup.HasPermission))
 						{
-							args.Player.SendErrorMessage("{0} can't be executed due to lack of permission.");
+							args.Player.SendErrorMessage("{0} can't be executed due to lack of permission.", Commands.Specifier + commandText);
 							return;
 						}
 						#endregion
-						vote = new Vote(args.Player, $"{Commands.Specifier}{commandText}", VoteType.Command);
+						vote = new Vote(args.Player, Commands.Specifier + commandText, VoteType.Command);
 						break;
 					}
 					args.Player.SendErrorMessage("Invalid syntax! Type /vote help for a list of instructions.");
