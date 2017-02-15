@@ -4,6 +4,8 @@ Vote is a **TShock-based** plugin aimed to allow players to vote for a mass of t
 
 **Note: To use this plugin, you must make sure that all players have logined.**
 
+> 本插件有中文版本! 查看[中文教程][cn].. [下载链接][cndown]..
+
 ## Requirement:
 - API Version: 2.0
 - TShock Version: 4.3.22
@@ -54,3 +56,5 @@ You can also change the group to another such as trustedadmin, but you should ne
 ```
 
    [tshockco]: <https://tshock.co>
+   [cn]: <https://github.com/mistzzt/Vote/blob/cn-mas/README.md>
+   [cndown]: <https://github.com/mistzzt/Vote/releases>
