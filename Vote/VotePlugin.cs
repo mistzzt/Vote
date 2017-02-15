@@ -1,23 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using System.Timers;
 using Microsoft.Xna.Framework;
 using TerrariaApi.Server;
 using Terraria;
 using TShockAPI;
 using TShockAPI.Hooks;
 
-namespace Vote {
+namespace Vote
+{
 	[ApiVersion(2, 0)]
-	public class VotePlugin:TerrariaPlugin {
-		public const string VotePlayerData = "votedata";
+	public class VotePlugin : TerrariaPlugin
+	{
 		internal static Configuration Config;
-		internal Dictionary<Vote, Timer> Votes = new Dictionary<Vote, Timer>();
+
+		internal static List<Vote> Votes = new List<Vote>();
+
 		internal static TSWheelPlayer Player;
-		internal static Utils Utils;
+
 		internal static VoteManager VotesHistory;
 
 		public override string Name => "Vote";
@@ -27,15 +28,18 @@ namespace Vote {
 
 		public VotePlugin(Main game) : base(game) { }
 
-		public override void Initialize() {
+		public override void Initialize()
+		{
 			ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
 			ServerApi.Hooks.NetGreetPlayer.Register(this, OnGreet, -100);
 
 			GeneralHooks.ReloadEvent += OnReload;
 		}
 
-		protected override void Dispose(bool disposing) {
-			if(disposing) {
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
 				ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
 				ServerApi.Hooks.NetGreetPlayer.Deregister(this, OnGreet);
 
@@ -44,37 +48,37 @@ namespace Vote {
 			base.Dispose(disposing);
 		}
 
-		private void OnInitialize(EventArgs args) {
+		private static void OnInitialize(EventArgs args)
+		{
 			Config = Configuration.Read(Configuration.FilePath);
 			Config.Write(Configuration.FilePath);
 			Config.LoadGroup();
 			Player = new TSWheelPlayer();
-			Utils = new Utils(this);
 			VotesHistory = new VoteManager(TShock.DB);
 
-			Commands.ChatCommands.Add(new Command("vote.player.startvote", StartVote, "vote", "投票", "v") {
+			Commands.ChatCommands.Add(new Command("vote.player.startvote", StartVote, "vote", "投票", "v")
+			{
 				AllowServer = false,
 				DoLog = false
 			});
 		}
 
-		private void OnGreet(GreetPlayerEventArgs args) {
+		private static void OnGreet(GreetPlayerEventArgs args)
+		{
 			var ply = TShock.Players[args.Who];
-			if(ply == null)
+			if (ply?.IsLoggedIn != true)
 				return;
 
-			var data = new PlayerData(args.Who);
-			ply.SetData(VotePlayerData, data);
+			var data = PlayerData.GetData(ply);
 
-			if(!ply.HasPermission("vote.player.vote"))
+			if (!ply.HasPermission("vote.player.vote"))
 				return;
 
-			if(Votes.Count == 0)
+			if (Votes.Count == 0)
 				return;
 
-			foreach (var votePair in Votes.Where(v => v.Key.Proponents.All(name => !name.Equals(ply.User.Name)) && v.Key.Opponents.All(name => !name.Equals(ply.User.Name)))) {
-				var vote = votePair.Key;
-
+			foreach (var vote in Votes.Where(v => v.Proponents.Union(v.Opponents).All(name => !name.Equals(ply.User.Name))))
+			{
 				data.AwaitingVote = true;
 				ply.SendInfoMessage("投票——因{2}, 故{0}发起{1}——正在进行中. ({3}s后结束)", vote.Sponsor,
 					TShock.Utils.ColorTag(vote.ToString(), Color.SkyBlue),
@@ -82,30 +86,37 @@ namespace Vote {
 					 Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - vote.Time).TotalSeconds);
 			}
 
-			if(data.AwaitingVote)
+			if (data.AwaitingVote)
 				ply.SendSuccessMessage("输入 {0} 或 {1} 以参与投票",
 					TShock.Utils.ColorTag("/赞成", Color.Cyan),
 					TShock.Utils.ColorTag("/反对", Color.Cyan));
 		}
 
-		[SuppressMessage("ReSharper", "PossibleNullReferenceException")]
-		private void StartVote(CommandArgs args) {
+		private static void StartVote(CommandArgs args)
+		{
+			if (!args.Player.IsLoggedIn)
+			{
+				args.Player.SendErrorMessage("你必须登录后使用该指令.");
+				return;
+			}
+
 			var cmd = args.Parameters.Count > 0 ? args.Parameters[0].ToLower() : "help";
-			var players = args.Parameters.Count < 2 ? null : TShock.Utils.FindPlayer(args.Parameters[1]);
-			var data = args.Player.GetData<PlayerData>(VotePlayerData);
-			if(data.StartedVote != null) {
-				args.Player.SendErrorMessage("你上次发起的投票还未结束. ({0}s)",
-					Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - data.StartedVote.Time).TotalSeconds);
+			var players = args.Parameters.Count < 2 ? new List<TSPlayer>() : TShock.Utils.FindPlayer(args.Parameters[1]);
+			var data = PlayerData.GetData(args.Player);
+			if (data.StartedVote != null)
+			{
+				args.Player.SendErrorMessage("你上次发起的投票还未结束。");
 				return;
 			}
 
 			Vote vote;
-			switch(cmd) {
+			switch (cmd)
+			{
 				case "帮助":
 				case "help":
 					#region -- Help --
 					int pageNumber;
-					if(!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+					if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
 						return;
 
 					var lines = new List<string>
@@ -124,7 +135,8 @@ namespace Vote {
 						};
 
 					PaginationTools.SendPage(args.Player, pageNumber, lines,
-						new PaginationTools.Settings {
+						new PaginationTools.Settings
+						{
 							HeaderFormat = "投票说明 ({0}/{1}):",
 							FooterFormat = "键入 {0}vote help {{0}} 以查看更多说明.".SFormat(Commands.Specifier)
 						}
@@ -134,84 +146,105 @@ namespace Vote {
 				case "封禁":
 				case "ban":
 					#region -- Ban --
-					if(args.Parameters.Count < 2) {
-						args.Player.SendErrorMessage("语法无效! 正确语法: /v ban <玩家名>");
+					string playerName = null;
+					if (args.Parameters.Count < 2)
+					{
+						args.Player.SendErrorMessage("语法无效! 正确语法: /v ban <玩家/账户名>");
 						return;
 					}
-					if(players.Count == 0) {
+					if (players.Count == 0)
+					{
 						var user = TShock.Users.GetUserByName(args.Parameters[1]);
-						if(user != null) {
-							if(TShock.Groups.GetGroupByName(user.Group).HasPermission(Permissions.immunetoban)) {
-								args.Player.SendErrorMessage("你无法封禁 {0}!", user.Name);
+						if (user != null)
+						{
+							if (TShock.Groups.GetGroupByName(user.Group).HasPermission(Permissions.immunetoban))
+							{
+								args.Player.SendErrorMessage("You can't ban {0}!", user.Name);
 								return;
 							}
+							playerName = user.Name;
 						}
-						args.Player.SendErrorMessage("玩家名或账户名无效!");
-						return;
+						else
+						{
+							args.Player.SendErrorMessage("名称无效!");
+							return;
+						}
 					}
-					if(players.Count > 1) {
+					if (players.Count > 1)
+					{
 						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
 						return;
 					}
+					playerName = players.SingleOrDefault()?.Name ?? playerName;
 					#endregion
-					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Ban);
+					vote = new Vote(args.Player, playerName, VoteType.Ban);
 					break;
 				case "驱逐":
 				case "kick":
 					#region -- Kick --
-					if(args.Parameters.Count < 2) {
+					if (args.Parameters.Count < 2)
+					{
 						args.Player.SendErrorMessage("语法无效! 正确语法: /v kick <玩家名>");
 						return;
 					}
-					if(players.Count == 0) {
+					if (players.Count == 0)
+					{
 						args.Player.SendErrorMessage("玩家名无效!");
 						return;
 					}
-					if(players.Count > 1) {
+					if (players.Count > 1)
+					{
 						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
 						return;
 					}
 					#endregion
-					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Kick);
+					vote = new Vote(args.Player, players.Single().Name, VoteType.Kick);
 					break;
 				case "禁言":
 				case "mute":
 					#region -- Mute --
-					if(args.Parameters.Count < 2) {
+					if (args.Parameters.Count < 2)
+					{
 						args.Player.SendErrorMessage("语法无效! 正确语法: /v mute <玩家名>");
 						return;
 					}
-					if(players.Count == 0) {
+					if (players.Count == 0)
+					{
 						args.Player.SendErrorMessage("玩家名无效!");
 						return;
 					}
-					if(players.Count > 1) {
+					if (players.Count > 1)
+					{
 						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
 						return;
 					}
 					#endregion
-					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Mute);
+					vote = new Vote(args.Player, players.Single().Name, VoteType.Mute);
 					break;
 				case "杀":
 				case "kill":
 					#region -- Kill --
-					if(args.Parameters.Count < 2) {
+					if (args.Parameters.Count < 2)
+					{
 						args.Player.SendErrorMessage("语法无效! 正确语法: /v kill <玩家名>");
 						return;
 					}
-					if(players.Count == 0) {
+					if (players.Count == 0)
+					{
 						args.Player.SendErrorMessage("玩家名无效!");
 						return;
 					}
-					if(players.Count > 1) {
+					if (players.Count > 1)
+					{
 						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
 						return;
 					}
 					#endregion
-					vote = new Vote(args.Player.User.Name, args.Parameters[1], VoteType.Kill);
+					vote = new Vote(args.Player, players.Single().Name, VoteType.Kill);
 					break;
 				default:
-					if(cmd.StartsWith(Commands.Specifier)) {
+					if (cmd.StartsWith(Commands.Specifier))
+					{
 						#region -- Command --
 						var commandText = string.Join(" ", args.Parameters).Remove(0, 1).TrimStart();
 						var commandName = commandText.Contains(" ")
@@ -219,40 +252,40 @@ namespace Vote {
 							? commandText.Substring(0, commandText.IndexOf(" ", StringComparison.Ordinal))
 							: commandText;
 
-						IEnumerable<Command> cmds = Commands.ChatCommands.FindAll(c => c.HasAlias(commandName));
-						if(!cmds.Any()) {
-							args.Player.SendErrorMessage("未找到此指令.");
+						var cmds = Commands.ChatCommands.FindAll(c => c.HasAlias(commandName));
+						if (cmds.Count == 0)
+						{
+							args.Player.SendErrorMessage("无效指令。");
 							return;
 						}
-						if(cmds.Count() > 1) {
-							args.Player.SendErrorMessage("存在相同名称的多个指令!");
+						if (cmds.Count > 1)
+						{
+							args.Player.SendErrorMessage("指令名称冲突!");
 							return;
 						}
 
-						var command = cmds.ElementAt(0);
-						if(!command.Permissions.Any(Config.ExecutiveGroup.HasPermission)) {
-							args.Player.SendErrorMessage("缺少执行该指令的权限, 无法投票执行.");
+						var command = cmds[0];
+						if (!command.Permissions.Any(Config.ExecutiveGroup.HasPermission))
+						{
+							args.Player.SendErrorMessage("缺少执行该指令的权限, 无法投票执行{0}", Commands.Specifier + commandText);
 							return;
 						}
 						#endregion
-						vote = new Vote(args.Player.User.Name, $"{Commands.Specifier}{commandText}", VoteType.Command);
+						vote = new Vote(args.Player, Commands.Specifier + commandText, VoteType.Command);
 						break;
 					}
 					args.Player.SendErrorMessage("语法无效! 输入 /vote help 获取帮助.");
 					return;
 			}
-
-			var timer = new Timer(Config.MaxAwaitingReasonTime * 1000) { AutoReset = false, Enabled = true };
-			timer.Elapsed += (s, e) => Utils.OnReasonTimerElasped(vote, args.Player);
-
 			data.StartedVote = vote;
 			data.AwaitingReason = true;
-			Votes.Add(vote, timer);
+			Votes.Add(vote);
 
 			args.Player.SendSuccessMessage("使用 {0} 以继续发起投票.", TShock.Utils.ColorTag("/因 <原因>", Color.SkyBlue));
 		}
 
-		private void OnReload(ReloadEventArgs args) {
+		private static void OnReload(ReloadEventArgs args)
+		{
 			Config = Configuration.Read(Configuration.FilePath);
 			Config.Write(Configuration.FilePath);
 			Config.LoadGroup();

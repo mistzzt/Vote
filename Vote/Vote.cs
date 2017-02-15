@@ -1,48 +1,74 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Timers;
 using TShockAPI;
 
-namespace Vote {
-	public class Vote {
+namespace Vote
+{
+	public class Vote
+	{
 		public DateTime Time { get; set; }
+
 		public string Sponsor { get; set; }
+
 		public string Target { get; set; }
+
 		public VoteType Type { get; set; }
+
 		public string Reason { get; set; }
-		public bool Succeed { get; set; } = false;
-		public bool Executed { get; set; } = false;
+
+		public bool Succeed { get; private set; }
+
+		public bool Executed { get; private set; }
+
 		public readonly List<string> Proponents = new List<string>();
+
 		public readonly List<string> Opponents = new List<string>();
+
 		public readonly List<string> Neutrals = new List<string>();
 
-		public Vote(string sponsor, string target, VoteType type) {
-			if(string.IsNullOrWhiteSpace(sponsor))
-				throw new ArgumentNullException(nameof(sponsor));
-			if(string.IsNullOrWhiteSpace(target))
-				throw new ArgumentNullException(nameof(target));
+		private Timer _voteTimer;
 
-			Sponsor = sponsor;
+		public Vote(TSPlayer player, string target, VoteType type)
+		{
+			Sponsor = player.User?.Name ?? player.Name;
 			Target = target;
 			Type = type;
 			Time = DateTime.UtcNow;
+
+			_voteTimer = new Timer(VotePlugin.Config.MaxAwaitingReasonTime * 1000) { AutoReset = false, Enabled = true };
+			_voteTimer.Elapsed += (s, e) => Utils.OnReasonTimerElasped(this, player);
 		}
 
-		public Vote(string sponsor, string target, DateTime time, VoteType type) : this(sponsor, target, type) {
+		public Vote(TSPlayer player, string target, DateTime time, VoteType type) : this(player, target, type)
+		{
 			Time = time;
 		}
 
-		public bool CheckPass() {
-			Succeed = Proponents.Count > (Proponents.Count + Opponents.Count + Neutrals.Count) / 2;
-			return Succeed;
+		public void ResetTimer()
+		{
+			_voteTimer.Dispose();
+			_voteTimer = new Timer
+			{
+				AutoReset = false,
+				Enabled = true,
+				Interval = VotePlugin.Config.MaxAwaitingVotingTime * 1000
+			};
+			_voteTimer.Elapsed += (s, e) => Utils.OnVoteTimerElasped(this);
 		}
 
-		[SuppressMessage("ReSharper", "SwitchStatementMissingSomeCases")]
-		public void Execute() {
-			if(!Succeed)
+		public void CheckPass()
+		{
+			Succeed = Proponents.Count > Opponents.Count;
+		}
+
+		public void Execute()
+		{
+			if (!Succeed)
 				return;
 
-			switch(Type) {
+			switch (Type)
+			{
 				case VoteType.Ban:
 					Commands.HandleCommand(VotePlugin.Player, $"/ban add \"{Target}\" \"{Reason}\"");
 					break;
@@ -61,8 +87,10 @@ namespace Vote {
 			Executed = true;
 		}
 
-		public override string ToString() {
-			switch(Type) {
+		public override string ToString()
+		{
+			switch (Type)
+			{
 				case VoteType.Ban:
 					return $"封禁 {Target}";
 				case VoteType.Kick:

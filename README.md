@@ -1,14 +1,16 @@
 # Vote for TShock
 
-Vote is a **TShock-based** plugin aimed to allow players to vote for a mass of things including **banning, kicking, killing, and muting players**, and **executing commands**.
+投票插件基于TShock，用途是让玩家投票。
 
-**Note: To use this plugin, you must make sure that all players have logined.**
+有了这个插件，玩家可以投票封禁、驱逐、禁言或杀死某玩家；而且玩家可以投票执行指令。
 
-## Requirement:
-- API Version: 1.23
-- TShock Version: 4.3.16
+**注意：要用这个插件，玩家需要登录。**
 
-## Commands:
+## 要求：
+- API版本: 2.0
+- TShock版本: 4.3.22
+
+## 指令：
 - `/vote <ban/kick/mute/kill> <player>` - *Starts a new vote on a player.*
 - `/vote <command line>` - *Starts a new vote on execting a command.*
 - `/vote help [page]` - *Gets a list of helps.*
@@ -32,7 +34,7 @@ Vote is a **TShock-based** plugin aimed to allow players to vote for a mass of t
 
 You can also find this plugin in [TShock offical forum][tshockco].
 
-## Permission
+## 权限
 - `vote.player.startvote` - *User can start a new vote.*
 - `vote.player.vote` - *User can vote for/against someone.*
 
@@ -43,17 +45,14 @@ Group `wheel` will be created the first time you use this plugin. It will has th
 
 You can also change the group to another such as trustedadmin, but you should never change the group to superadmin, as players may execute some destructive commands.
 
-## Configuration: **`vote.json`**
-`{`
-  
-  `"ExecutiveGroup": "wheel",` - *The group which execute commands.*
-  
-  `"MaxAwaitingVotingTime": 60,` - *The max time a vote will last.*
-  
-  `"MaxAwaitingReasonTime": 30,` - *The max time for player to give his reason.*
-  
-  `"ShowResult": true` - *Whether system will show vote-result of players.*
-  
-`}`
+## 配置文件：**`vote.json`**
+```
+{
+  "ExecutiveGroup": "wheel", // The group which execute commands.
+  "MaxAwaitingVotingTime": 60, // The max time a vote will last.
+  "MaxAwaitingReasonTime": 30, // The max time for player to give his reason.
+  "ShowResult": true // Whether system will show vote-result of players.
+}
+```
 
    [tshockco]: <https://tshock.co>

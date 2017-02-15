@@ -1,5 +1,7 @@
-﻿namespace Vote {
-	public enum VoteType:byte {
+﻿namespace Vote
+{
+	public enum VoteType : byte
+	{
 		Ban,
 		Kick,
 		Mute,
