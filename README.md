@@ -5,8 +5,8 @@ Vote is a **TShock-based** plugin aimed to allow players to vote for a mass of t
 **Note: To use this plugin, you must make sure that all players have logined.**
 
 ## Requirement:
-- API Version: 1.23
-- TShock Version: 4.3.16
+- API Version: 2.0
+- TShock Version: 4.3.22
 
 ## Commands:
 - `/vote <ban/kick/mute/kill> <player>` - *Starts a new vote on a player.*
@@ -44,16 +44,13 @@ Group `wheel` will be created the first time you use this plugin. It will has th
 You can also change the group to another such as trustedadmin, but you should never change the group to superadmin, as players may execute some destructive commands.
 
 ## Configuration: **`vote.json`**
-`{`
-  
-  `"ExecutiveGroup": "wheel",` - *The group which execute commands.*
-  
-  `"MaxAwaitingVotingTime": 60,` - *The max time a vote will last.*
-  
-  `"MaxAwaitingReasonTime": 30,` - *The max time for player to give his reason.*
-  
-  `"ShowResult": true` - *Whether system will show vote-result of players.*
-  
-`}`
+```
+{
+  "ExecutiveGroup": "wheel", // The group which execute commands.
+  "MaxAwaitingVotingTime": 60, // The max time a vote will last.
+  "MaxAwaitingReasonTime": 30, // The max time for player to give his reason.
+  "ShowResult": true // Whether system will show vote-result of players.
+}
+```
 
    [tshockco]: <https://tshock.co>
