@@ -17,9 +17,9 @@ namespace Vote
 
 		public string Reason { get; set; }
 
-		public bool Succeed { get; set; }
+		public bool Succeed { get; private set; }
 
-		public bool Executed { get; set; }
+		public bool Executed { get; private set; }
 
 		public readonly List<string> Proponents = new List<string>();
 
@@ -57,10 +57,9 @@ namespace Vote
 			_voteTimer.Elapsed += (s, e) => Utils.OnVoteTimerElasped(this);
 		}
 
-		public bool CheckPass()
+		public void CheckPass()
 		{
-			Succeed = Proponents.Count > (Proponents.Count + Opponents.Count + Neutrals.Count) / 2;
-			return Succeed;
+			Succeed = Proponents.Count > Opponents.Count;
 		}
 
 		public void Execute()

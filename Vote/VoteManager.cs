@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data;
-using System.Diagnostics;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using TShockAPI;
@@ -23,7 +22,6 @@ namespace Vote
 									new SqlColumn("Sponsor", MySqlDbType.Text),
 									new SqlColumn("Target", MySqlDbType.Text),
 									new SqlColumn("Reason", MySqlDbType.Text),
-									new SqlColumn("Succeed", MySqlDbType.Int32),
 									new SqlColumn("Proponents", MySqlDbType.Text),
 									new SqlColumn("Opponents", MySqlDbType.Text),
 									new SqlColumn("Neutrals", MySqlDbType.Text)
@@ -45,27 +43,24 @@ namespace Vote
 
 		public void AddVote(Vote vote)
 		{
-			const string query = "INSERT INTO `Votes` (`Type`, `Date`, `Sponsor`, `Target`, `Reason`, `Succeed`, `Proponents`, `Opponents`, `Neutrals`) VALUES (@0, @1, @2, @3, @4, @5, @6, @7, @8);";
+			const string query = "INSERT INTO `Votes` (`Type`, `Date`, `Sponsor`, `Target`, `Reason`, `Proponents`, `Opponents`, `Neutrals`) VALUES (@0, @1, @2, @3, @4, @5, @6, @7, @8);";
 			var parameters = new object[] {
 				vote.Type.ToString(),
 				vote.Time.ToString("s"),
 				vote.Sponsor,
 				vote.Target,
 				vote.Reason,
-				vote.Succeed ? 1 : 0,
 				JsonConvert.SerializeObject(vote.Proponents, Formatting.Indented),
 				JsonConvert.SerializeObject(vote.Opponents, Formatting.Indented),
 				JsonConvert.SerializeObject(vote.Neutrals, Formatting.Indented)
 			};
 			try
 			{
-				if (_database.Query(query, parameters) == 0)
-					throw new Exception("No affected rows");
+				_database.Query(query, parameters);
 			}
 			catch (Exception ex)
 			{
 				TShock.Log.Error(ex.ToString());
-				Debugger.Break();
 			}
 		}
 	}

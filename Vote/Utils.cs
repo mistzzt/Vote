@@ -204,10 +204,8 @@ namespace Vote
 				}
 			}
 
-			if (vote.CheckPass())
-			{
-				vote.Execute();
-			}
+			vote.CheckPass();
+			vote.Execute();
 
 			TSPlayer.All.SendMessage(string.Format("{0} has {1}passed. ({2} : {3} : {4})",
 														TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue),

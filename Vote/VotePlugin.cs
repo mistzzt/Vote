@@ -110,8 +110,7 @@ namespace Vote
 			var data = PlayerData.GetData(args.Player);
 			if (data.StartedVote != null)
 			{
-				args.Player.SendErrorMessage("You can't initate a new vote until the former one you started ended. ({0}s)",
-					Config.MaxAwaitingVotingTime - (int)(DateTime.UtcNow - data.StartedVote.Time).TotalSeconds);
+				args.Player.SendErrorMessage("You can't initate a new vote until the former one you started ended.");
 				return;
 			}
 
