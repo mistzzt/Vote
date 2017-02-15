@@ -6,11 +6,14 @@ using Newtonsoft.Json;
 using TShockAPI;
 using TShockAPI.DB;
 
-namespace Vote {
-	internal class VoteManager {
-		private IDbConnection _database;
+namespace Vote
+{
+	internal class VoteManager
+	{
+		private readonly IDbConnection _database;
 
-		public VoteManager(IDbConnection db) {
+		public VoteManager(IDbConnection db)
+		{
 			_database = db;
 
 			var table = new SqlTable("Votes",
@@ -29,15 +32,19 @@ namespace Vote {
 											  db.GetSqlType() == SqlType.Sqlite
 												  ? (IQueryBuilder)new SqliteQueryCreator()
 												  : new MysqlQueryCreator());
-			try {
+			try
+			{
 				creator.EnsureTableStructure(table);
-			} catch(DllNotFoundException) {
+			}
+			catch (DllNotFoundException)
+			{
 				Console.WriteLine(@"Possible problem with your database -- is Sqlite3.dll present?");
 				throw new Exception("Could not find a database library (probably Sqlite3.dll)");
 			}
 		}
 
-		public void AddVote(Vote vote) {
+		public void AddVote(Vote vote)
+		{
 			const string query = "INSERT INTO `Votes` (`Type`, `Date`, `Sponsor`, `Target`, `Reason`, `Succeed`, `Proponents`, `Opponents`, `Neutrals`) VALUES (@0, @1, @2, @3, @4, @5, @6, @7, @8);";
 			var parameters = new object[] {
 				vote.Type.ToString(),
@@ -50,10 +57,13 @@ namespace Vote {
 				JsonConvert.SerializeObject(vote.Opponents, Formatting.Indented),
 				JsonConvert.SerializeObject(vote.Neutrals, Formatting.Indented)
 			};
-			try {
-				if(_database.Query(query, parameters) == 0)
+			try
+			{
+				if (_database.Query(query, parameters) == 0)
 					throw new Exception("No affected rows");
-			} catch(Exception ex) {
+			}
+			catch (Exception ex)
+			{
 				TShock.Log.Error(ex.ToString());
 				Debugger.Break();
 			}
