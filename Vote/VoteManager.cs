@@ -43,7 +43,7 @@ namespace Vote
 
 		public void AddVote(Vote vote)
 		{
-			const string query = "INSERT INTO `Votes` (`Type`, `Date`, `Sponsor`, `Target`, `Reason`, `Proponents`, `Opponents`, `Neutrals`) VALUES (@0, @1, @2, @3, @4, @5, @6, @7, @8);";
+			const string query = "INSERT INTO `Votes` (`Type`, `Date`, `Sponsor`, `Target`, `Reason`, `Proponents`, `Opponents`, `Neutrals`) VALUES (@0, @1, @2, @3, @4, @5, @6, @7);";
 			var parameters = new object[] {
 				vote.Type.ToString(),
 				vote.Time.ToString("s"),
