@@ -10,7 +10,7 @@ using TShockAPI.Hooks;
 
 namespace Vote
 {
-	[ApiVersion(2, 0)]
+	[ApiVersion(2, 1)]
 	public class VotePlugin : TerrariaPlugin
 	{
 		internal static Configuration Config;
