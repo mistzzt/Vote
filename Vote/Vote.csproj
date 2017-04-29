@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Server\ServerPlugins\</OutputPath>
+    <OutputPath>bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Server\ServerPlugins\</OutputPath>
+    <OutputPath>bin\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -40,12 +40,18 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="OTAPI">
-      <HintPath>..\..\RegionTrigger\TShock\TerrariaServerAPI\TerrariaServerAPI\bin\Debug\OTAPI.dll</HintPath>
+      <HintPath>..\References\OTAPI.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="TerrariaServer">
+      <HintPath>..\References\TerrariaServer.exe</HintPath>
+    </Reference>
+    <Reference Include="TShockAPI">
+      <HintPath>..\References\TShockAPI.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration.cs" />
@@ -61,16 +67,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TShock\TerrariaServerAPI\TerrariaServerAPI\TerrariaServerAPI.csproj">
-      <Project>{6877506e-adc6-4142-98a6-79e4fa02855a}</Project>
-      <Name>TerrariaServerAPI</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TShock\TShockAPI\TShockAPI.csproj">
-      <Project>{49606449-072b-4cf5-8088-aa49da586694}</Project>
-      <Name>TShockAPI</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
