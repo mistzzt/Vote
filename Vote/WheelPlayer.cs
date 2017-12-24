@@ -5,13 +5,14 @@ using TShockAPI.DB;
 
 namespace Vote
 {
-	// ReSharper disable once InconsistentNaming
-	internal class TSWheelPlayer : TSPlayer
+	internal class WheelPlayer : TSPlayer
 	{
-		public TSWheelPlayer() : base("民意")
+	    private const string WheelName = "民意";
+	    
+	    public WheelPlayer() : base(WheelName)
 		{
 			Group = VotePlugin.Config.ExecutiveGroup;
-			User = new User { Name = "民意" };
+			Account = new UserAccount { Name = WheelName };
 		}
 
 		public override void SendErrorMessage(string msg)

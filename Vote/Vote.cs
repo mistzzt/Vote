@@ -31,7 +31,7 @@ namespace Vote
 
 		public Vote(TSPlayer player, string target, VoteType type)
 		{
-			Sponsor = player.User?.Name ?? player.Name;
+			Sponsor = player.Account?.Name ?? player.Name;
 			Target = target;
 			Type = type;
 			Time = DateTime.UtcNow;

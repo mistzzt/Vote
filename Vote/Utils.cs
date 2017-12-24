@@ -109,7 +109,7 @@ namespace Vote
 				}
 			}
 
-			if (vote.Opponents.Union(vote.Proponents).Contains(args.Player.User.Name))
+			if (vote.Opponents.Union(vote.Proponents).Contains(args.Player.Account.Name))
 			{
 				data.AwaitingVote = true;
 				args.Player.SendErrorMessage("你已经投过票了!");
@@ -146,23 +146,23 @@ namespace Vote
 
 			if (data.Support)
 			{
-				data.OngoingVote.Proponents.Add(args.Player.User.Name);
+				data.OngoingVote.Proponents.Add(args.Player.Account.Name);
 			}
 			else
 			{
-				data.OngoingVote.Opponents.Add(args.Player.User.Name);
+				data.OngoingVote.Opponents.Add(args.Player.Account.Name);
 			}
 
 			if (!VotePlugin.Config.ShowResult)
 				TSPlayer.All.SendInfoMessage("{0}在{1}的投票里表决了!",
-					args.Player.User.Name,
+				        args.Player.Account.Name,
 					TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
 			else
 				TSPlayer.All.SendInfoMessage("{0}投票{1}了{2}!",
-					args.Player.User.Name,
+					args.Player.Account.Name,
 					TShock.Utils.ColorTag(data.Support ? "赞成" : "反对", Color.OrangeRed),
 					TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
-			TShock.Log.ConsoleInfo($"{args.Player.User.Name}投票{(data.Support ? "赞成" : "反对")}了{data.OngoingVote}!");
+			TShock.Log.ConsoleInfo($"{args.Player.Account.Name}投票{(data.Support ? "赞成" : "反对")}了{data.OngoingVote}!");
 
 			data.OngoingVote = null;
 			data.Support = false;
@@ -209,9 +209,9 @@ namespace Vote
 					data.OngoingVote = null;
 				}
 				// those who don't type /assent or /dissent
-				else if (vote.Opponents.Union(vote.Proponents).All(ply => !player.User.Name.Equals(ply, StringComparison.Ordinal)))
+				else if (vote.Opponents.Union(vote.Proponents).All(ply => !player.Account.Name.Equals(ply, StringComparison.Ordinal)))
 				{
-					vote.Neutrals.Add(player.User.Name);
+					vote.Neutrals.Add(player.Account.Name);
 					player.SendMessage($"投票——{TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)}——已弃权。", Color.Azure);
 				}
 			}
