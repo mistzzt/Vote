@@ -17,7 +17,7 @@ namespace Vote
 
 		internal static List<Vote> Votes = new List<Vote>();
 
-		internal static TSWheelPlayer Player;
+		internal static WheelPlayer Player;
 
 		internal static VoteManager VotesHistory;
 
@@ -53,7 +53,7 @@ namespace Vote
 			Config = Configuration.Read(Configuration.FilePath);
 			Config.Write(Configuration.FilePath);
 			Config.LoadGroup();
-			Player = new TSWheelPlayer();
+			Player = new WheelPlayer();
 			VotesHistory = new VoteManager(TShock.DB);
 
 			Commands.ChatCommands.Add(new Command("vote.player.startvote", StartVote, "vote", "v")
@@ -77,7 +77,7 @@ namespace Vote
 			if (Votes.Count == 0)
 				return;
 
-			foreach (var vote in Votes.Where(v => v.Proponents.Union(v.Opponents).All(name => !name.Equals(ply.User.Name))))
+			foreach (var vote in Votes.Where(v => v.Proponents.Union(v.Opponents).All(name => !name.Equals(ply.Account.Name))))
 			{
 				data.AwaitingVote = true;
 				ply.SendInfoMessage("Vote: {1} for {2} by {0} is in progress. ({3}s last)", vote.Sponsor,
@@ -114,8 +114,8 @@ namespace Vote
 			{
 				case "help":
 					#region -- Help --
-					int pageNumber;
-					if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out pageNumber))
+
+				    if (!PaginationTools.TryParsePageNumber(args.Parameters, 1, args.Player, out var pageNumber))
 						return;
 
 					var lines = new List<string>
@@ -152,7 +152,7 @@ namespace Vote
 					}
 					if (players.Count == 0)
 					{
-						var user = TShock.Users.GetUserByName(args.Parameters[1]);
+						var user = TShock.UserAccounts.GetUserAccountByName(args.Parameters[1]);
 						if (user != null)
 						{
 							if (TShock.Groups.GetGroupByName(user.Group).HasPermission(Permissions.immunetoban))
@@ -284,7 +284,7 @@ namespace Vote
 			Config = Configuration.Read(Configuration.FilePath);
 			Config.Write(Configuration.FilePath);
 			Config.LoadGroup();
-			Player = new TSWheelPlayer();
+			Player = new WheelPlayer();
 		}
 	}
 }

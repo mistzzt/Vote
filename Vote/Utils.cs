@@ -110,7 +110,7 @@ namespace Vote
 				}
 			}
 
-			if (vote.Opponents.Union(vote.Proponents).Contains(args.Player.User.Name))
+			if (vote.Opponents.Union(vote.Proponents).Contains(args.Player.Account.Name))
 			{
 				data.AwaitingVote = true;
 				args.Player.SendErrorMessage("You have voted on this issue!");
@@ -147,23 +147,23 @@ namespace Vote
 
 			if (data.Support)
 			{
-				data.OngoingVote.Proponents.Add(args.Player.User.Name);
+				data.OngoingVote.Proponents.Add(args.Player.Account.Name);
 			}
 			else
 			{
-				data.OngoingVote.Opponents.Add(args.Player.User.Name);
+				data.OngoingVote.Opponents.Add(args.Player.Account.Name);
 			}
 
 			if (!VotePlugin.Config.ShowResult)
 				TSPlayer.All.SendInfoMessage("{0} voted on {1}!",
-					args.Player.User.Name,
+					args.Player.Account.Name,
 					TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
 			else
 				TSPlayer.All.SendInfoMessage("{0} voted {1} {2}!",
-					args.Player.User.Name,
+					args.Player.Account.Name,
 					TShock.Utils.ColorTag(data.Support ? "for" : "against", Color.OrangeRed),
 					TShock.Utils.ColorTag(data.OngoingVote.ToString(), Color.SkyBlue));
-			TShock.Log.ConsoleInfo($"{args.Player.User.Name} voted {(data.Support ? "for" : "against")} {data.OngoingVote}!");
+			TShock.Log.ConsoleInfo($"{args.Player.Account.Name} voted {(data.Support ? "for" : "against")} {data.OngoingVote}!");
 
 			data.OngoingVote = null;
 			data.Support = false;
@@ -210,9 +210,9 @@ namespace Vote
 					data.OngoingVote = null;
 				}
 				// those who don't type /assent or /dissent
-				else if (vote.Opponents.Union(vote.Proponents).All(ply => !player.User.Name.Equals(ply, StringComparison.Ordinal)))
+				else if (vote.Opponents.Union(vote.Proponents).All(ply => !player.Account.Name.Equals(ply, StringComparison.Ordinal)))
 				{
-					vote.Neutrals.Add(player.User.Name);
+					vote.Neutrals.Add(player.Account.Name);
 					player.SendMessage($"You have abstained from voting on {TShock.Utils.ColorTag(vote.ToString(), Color.DeepSkyBlue)}.", Color.Azure);
 				}
 			}
