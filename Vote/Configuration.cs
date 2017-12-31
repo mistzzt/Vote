@@ -24,6 +24,9 @@ namespace Vote
 		[JsonProperty]
 		public bool ShowResult = true;
 
+        [JsonProperty]
+	    public string BanTimeSpan = "7d";
+
 		internal void LoadGroup()
 		{
 			ExecutiveGroup = TShock.Groups.GetGroupByName(ExecutiveGroupName);
