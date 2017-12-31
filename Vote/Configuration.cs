@@ -24,6 +24,9 @@ namespace Vote
 		[JsonProperty("显示玩家投票结果")]
 		public bool ShowResult = true;
 
+        [JsonProperty]
+	    public string BanTimeSpan = "7d";
+
 		internal void LoadGroup()
 		{
 			ExecutiveGroup = TShock.Groups.GetGroupByName(ExecutiveGroupName);

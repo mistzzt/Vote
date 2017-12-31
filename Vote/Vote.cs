@@ -70,7 +70,7 @@ namespace Vote
 			switch (Type)
 			{
 				case VoteType.Ban:
-					Commands.HandleCommand(VotePlugin.Player, $"/ban add \"{Target}\" \"{Reason}\"");
+					Commands.HandleCommand(VotePlugin.Player, $"/ban add \"{Target}\" \"{VotePlugin.Config.BanTimeSpan}\" \"{Reason}\"");
 					break;
 				case VoteType.Kick:
 				case VoteType.Mute:
