@@ -101,7 +101,7 @@ namespace Vote
 			}
 
 			var cmd = args.Parameters.Count > 0 ? args.Parameters[0].ToLower() : "help";
-			var players = args.Parameters.Count < 2 ? new List<TSPlayer>() : TShock.Utils.FindPlayer(args.Parameters[1]);
+			var players = args.Parameters.Count < 2 ? new List<TSPlayer>() : TSPlayer.FindByNameOrID(args.Parameters[1]);
 			var data = PlayerData.GetData(args.Player);
 			if (data.StartedVote != null)
 			{
@@ -170,7 +170,7 @@ namespace Vote
 					}
 					if (players.Count > 1)
 					{
-						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						args.Player.SendMultipleMatchError(players.Select(p => p.Name));
 						return;
 					}
 					playerName = players.SingleOrDefault()?.Name ?? playerName;
@@ -191,7 +191,7 @@ namespace Vote
 					}
 					if (players.Count > 1)
 					{
-						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						args.Player.SendMultipleMatchError(players.Select(p => p.Name));
 						return;
 					}
 					#endregion
@@ -211,7 +211,7 @@ namespace Vote
 					}
 					if (players.Count > 1)
 					{
-						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						args.Player.SendMultipleMatchError(players.Select(p => p.Name));
 						return;
 					}
 					#endregion
@@ -231,7 +231,7 @@ namespace Vote
 					}
 					if (players.Count > 1)
 					{
-						TShock.Utils.SendMultipleMatchError(args.Player, players.Select(p => p.Name));
+						args.Player.SendMultipleMatchError(players.Select(p => p.Name));
 						return;
 					}
 					#endregion

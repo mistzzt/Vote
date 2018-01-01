@@ -90,7 +90,7 @@ namespace Vote
 				else if (list.Count > 1)
 				{
 					data.AwaitingVote = true;
-					TShock.Utils.SendMultipleMatchError(args.Player, list.Select(l => l.Sponsor));
+                    args.Player.SendMultipleMatchError(list.Select(l => l.Sponsor));
 					return;
 				}
 				else
