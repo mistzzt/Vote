@@ -6,12 +6,12 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MistZZT")]
 [assembly: AssemblyProduct("Vote")]
-[assembly: AssemblyCopyright("Copyright © MistZZT 2017")]
+[assembly: AssemblyCopyright("Copyright © MistZZT 2018")]
 [assembly: AssemblyTrademark("MistZZT")]
 [assembly: AssemblyCulture("zh-CN")]
 
 [assembly: ComVisible(false)]
 [assembly: Guid("8016e0f2-824b-4a07-9488-f4a49765854b")]
 
-[assembly: AssemblyVersion("2.3.0.0")]
-[assembly: AssemblyFileVersion("2.3.0.0")]
+[assembly: AssemblyVersion("2.4.0.0")]
+[assembly: AssemblyFileVersion("2.4.0.0")]
